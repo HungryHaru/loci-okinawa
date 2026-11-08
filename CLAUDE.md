@@ -16,7 +16,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く。Origin チェックあり）。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
 - `start-app.ps1` … デスクトップショートカット用ランチャー（server.py を 127.0.0.1:8000 で起動 → Chrome `--app` で開く。ブラウザは Chrome に統一）。PS 5.1 が読むので **ASCII のみ**で書くこと
 - `gas/line-notify.gs` … LINE 通知用の Google Apps Script（ユーザーが script.google.com に貼って使う。ウェブアプリ `doPost` で予定を受け取り、毎日12時の `dailyNotify` で LINE Messaging API の push）。トークン類はスクリプト プロパティ
-- `icon.svg`（PWA/ファビコン）, `icon.ico`（ショートカット用）, `manifest.json`
+- `icon.svg`（PWA/ファビコン）, `icon-180.png`（iPhone のホーム画面）, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
 
 ## git
