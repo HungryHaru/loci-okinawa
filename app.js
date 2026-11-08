@@ -51,13 +51,14 @@ function ensureState(s) {
   return s;
 }
 let saveChain = Promise.resolve();
-function save() {
+function save(fromCloud = false) {
   // 順番どおりに書き込む（追い越しで古い内容が残らないように）
   saveChain = saveChain
     .then(() => kv.set('state', state))
     .catch((e) => { console.error(e); toast('保存に失敗しました（保存容量を確認してください）'); });
   scheduleSync();
   scheduleNotifyUpload();
+  if (!fromCloud) markCloudDirty(); // クラウドから読み込んだ内容は、送り返さない
 }
 
 // ===== 間隔反復（次に復習する日） =====
@@ -118,26 +119,149 @@ async function uploadNotify(force = false) {
     try { localStorage.setItem(NOTIFY_STORAGE + '-last', body); } catch (e) { /* なし */ }
   } catch (e) { console.error(e); } // オフラインなど。次に保存したときにまた送る
 }
+// ===== クラウド同期（自分の Apps Script → 自分の Google ドライブ） =====
+// PC とスマホで同じデータを使うため。LINE 通知と同じ Apps Script の URL を使う。
+// しくみ：クラウドには「版番号（rev）」があり、各端末は最後にそろえた版を覚えておく。
+//   クラウドの版が進んでいたら読み込む／この端末だけ変更があれば送る／両方変わっていたら本人に選んでもらう
+const SYNC_REV = 'loci-okinawa-sync-rev';     // この端末が最後にそろえたクラウドの版（なし＝まだ一度も同期していない）
+const SYNC_DIRTY = 'loci-okinawa-sync-dirty'; // まだクラウドに送っていない変更がある
+const ls = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* なし */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* なし */ } },
+};
+let cloudTimer = null, cloudBusy = false, cloudAgain = false;
+let cloudImgs = new Set(); // クラウドにある画像の id
+let editSeq = 0;           // 変更の回数（送っている最中に変更があったかを見分ける）
+
+function markCloudDirty() {
+  editSeq++;
+  if (!notifyUrl()) return;
+  ls.set(SYNC_DIRTY, '1');
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(cloudSync, 2000);
+}
+
+function usedImageIds(st) {
+  const used = new Set();
+  st.palaces.forEach((p) => p.loci.forEach((l) =>
+    (l.ink || []).forEach((it) => it.type === 'image' && used.add(it.img))));
+  return used;
+}
+
+async function cloudCall(body) {
+  const res = await fetch(notifyUrl(), {
+    method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+  });
+  const t = await res.text();
+  if (t === 'ng') throw new Error('合言葉が違います（URL の ?key= を確認してください）');
+  let d;
+  try { d = JSON.parse(t); } catch (e) { throw new Error('Apps Script が古いようです（新しいコードに貼り替えて、デプロイし直してください）'); }
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+
+async function cloudSync() {
+  if (!notifyUrl()) return;
+  if (cloudBusy) { cloudAgain = true; return; }
+  cloudBusy = true;
+  try {
+    const meta = await cloudCall({ action: 'meta' });
+    cloudImgs = new Set(meta.imageIds || []);
+    const mine = ls.get(SYNC_REV);
+    const dirty = ls.get(SYNC_DIRTY) === '1';
+    const hasData = state.palaces.some((p) => p.loci.length);
+    if (mine === null) {                          // この端末で初めての同期
+      if (!meta.rev) await cloudPush(0);          // クラウドが空 → この端末の内容を送る
+      else if (!hasData) await cloudPull();       // この端末が空 → クラウドの内容を読む
+      else await cloudConflict(meta.rev, true);
+    } else if (meta.rev > Number(mine)) {          // ほかの端末で変更があった
+      if (dirty) await cloudConflict(meta.rev, false);
+      else await cloudPull();
+    } else if (dirty) {                            // この端末だけ変更があった
+      await cloudPush(Number(mine));
+    }
+  } catch (e) {
+    console.error(e);
+    if (navigator.onLine !== false) toast('クラウド同期に失敗しました：' + e.message);
+  } finally {
+    cloudBusy = false;
+    if (cloudAgain) { cloudAgain = false; cloudSync(); }
+  }
+}
+
+async function cloudPush(baseRev) {
+  const seq = editSeq;
+  // 新しい画像を先に少しずつ送る（一度に送ると時間切れになるため）
+  const ids = [...usedImageIds(state)].filter((id) => !cloudImgs.has(id));
+  for (let i = 0; i < ids.length; i += 15) {
+    const images = {};
+    for (const id of ids.slice(i, i + 15)) { const d = await idb.get(id); if (d) images[id] = d; }
+    if (Object.keys(images).length) await cloudCall({ action: 'putImages', images });
+    Object.keys(images).forEach((id) => cloudImgs.add(id));
+  }
+  const r = await cloudCall({ action: 'push', baseRev, state });
+  if (r.conflict) return cloudConflict(r.rev, false);
+  ls.set(SYNC_REV, String(r.rev));
+  cloudImgs = new Set(r.imageIds || []);
+  if (seq === editSeq) ls.del(SYNC_DIRTY); // 送っている間に変更があれば、次の回でまた送る
+}
+
+async function cloudPull() {
+  const r = await cloudCall({ action: 'pull' });
+  if (!r.state || !Array.isArray(r.state.palaces)) return;
+  const have = new Set(await idb.keys());
+  const missing = (r.imageIds || []).filter((id) => !have.has(id));
+  for (let i = 0; i < missing.length; i += 15) {
+    const g = await cloudCall({ action: 'images', ids: missing.slice(i, i + 15) });
+    for (const [k, v] of Object.entries(g.images || {})) await idb.set(k, v);
+  }
+  await kv.set('state-before-sync', state).catch(() => {}); // 念のため、読み込む前の内容を1つだけ残す
+  state = ensureState(r.state);
+  review = null;
+  editingId = null;
+  save(true);
+  ls.set(SYNC_REV, String(r.rev));
+  ls.del(SYNC_DIRTY);
+  cloudImgs = new Set(r.imageIds || []);
+  renderAll();
+  const first = cur().loci[0];
+  if (first) showLocus(first);
+  toast('クラウドから最新のデータを読み込みました');
+}
+
+async function cloudConflict(rev, first) {
+  const useCloud = confirm(first
+    ? 'クラウドにも、この端末にもデータがあります。\n\nOK：クラウドのデータを使う（この端末のデータは消えます）\nキャンセル：この端末のデータでクラウドを上書きする'
+    : 'この端末とほかの端末の両方で、まだそろっていない変更があります。\n\nOK：クラウド（ほかの端末）のデータを使う（この端末の変更は消えます）\nキャンセル：この端末のデータでクラウドを上書きする');
+  if (useCloud) await cloudPull();
+  else await cloudPush(rev);
+}
+
 async function setupNotify() {
   const now = notifyUrl();
   const v = prompt(
-    'LINE 通知用の Apps Script の URL を貼ってください（最後に ?key=合言葉 を付けたもの）。\n' +
-    '空にして OK を押すと、通知をやめます。\n手順は「？（使い方）」の「LINE で復習のお知らせ」にあります。', now);
+    'クラウド連携（PC とスマホの同期・LINE 通知）用の Apps Script の URL を貼ってください（最後に ?key=合言葉 を付けたもの）。\n' +
+    '空にして OK を押すと、この端末のクラウド連携をやめます。\n手順は「？（使い方）」の「クラウド連携」にあります。', now);
   if (v === null) return;
   const url = v.trim();
   if (!url) {
-    try { localStorage.removeItem(NOTIFY_STORAGE); localStorage.removeItem(NOTIFY_STORAGE + '-last'); } catch (e) { /* なし */ }
-    return toast('LINE 通知をやめました（Apps Script 側の毎日の動きは、そのままだと空振りします）');
+    [NOTIFY_STORAGE, NOTIFY_STORAGE + '-last', SYNC_REV, SYNC_DIRTY].forEach((k) => ls.del(k));
+    return toast('この端末のクラウド連携をやめました');
   }
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\?key=.+/.test(url)) {
     return toast('URL の形が違います（https://script.google.com/macros/s/…/exec?key=合言葉）');
   }
-  try { localStorage.setItem(NOTIFY_STORAGE, url); } catch (e) { return toast('保存できませんでした'); }
-  try {
-    await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ test: true }), headers: { 'Content-Type': 'text/plain' } });
-  } catch (e) { /* 下で案内 */ }
+  if (url !== now) [SYNC_REV, NOTIFY_STORAGE + '-last'].forEach((k) => ls.del(k)); // 新しくつなぐときは最初からそろえ直す
+  ls.set(NOTIFY_STORAGE, url);
+  if (confirm('LINE にテスト通知を送りますか？')) {
+    try {
+      await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ test: true }), headers: { 'Content-Type': 'text/plain' } });
+    } catch (e) { /* 下の同期でエラーが分かる */ }
+  }
   await uploadNotify(true);
-  toast('テスト通知を送りました。LINE に届いたか確認してください');
+  await cloudSync();
+  toast('クラウド連携を設定しました');
 }
 
 async function showStorageInfo() {
@@ -860,10 +984,8 @@ document.addEventListener('keydown', (e) => {
 // どこからも使われていない画像を消す（起動時）
 async function gcImages() {
   try {
-    const used = new Set();
-    const scan = (items) => (items || []).forEach((it) => it.type === 'image' && used.add(it.img));
-    state.palaces.forEach((p) => p.loci.forEach((l) => scan(l.ink)));
-    scan(draft.items);
+    const used = usedImageIds(state);
+    (draft.items || []).forEach((it) => it.type === 'image' && used.add(it.img));
     for (const k of await idb.keys()) if (!used.has(k)) await idb.del(k);
   } catch (e) { /* 失敗しても動作には影響なし */ }
 }
@@ -1683,6 +1805,10 @@ document.addEventListener('keydown', (e) => {
   else if (review.revealed && e.key === '2') answer(false);
 });
 
+// アプリに戻ってきたとき・ネットにつながったときに、クラウドとそろえる
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cloudSync(); });
+window.addEventListener('online', () => cloudSync());
+
 // ===== 起動 =====
 (async () => {
   state = await loadState();
@@ -1692,6 +1818,7 @@ document.addEventListener('keydown', (e) => {
   gcImages();
   initVault();
   uploadNotify(); // 起動時にも予定を送っておく（日付が変わって数が変わることがあるため）
+  cloudSync();    // ほかの端末で変更があれば読み込む
   // ブラウザに「容量不足でも消さないで」とお願いする
   try { await navigator.storage?.persist?.(); } catch (e) { /* 未対応 */ }
   const savedKey = await loadApiKey();

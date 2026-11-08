@@ -15,7 +15,10 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - `help.html` … 使い方ページ（機能を変えたらここも更新する）
 - `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く。Origin チェックあり）。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
 - `start-app.ps1` … デスクトップショートカット用ランチャー（server.py を 127.0.0.1:8000 で起動 → Chrome `--app` で開く。ブラウザは Chrome に統一）。PS 5.1 が読むので **ASCII のみ**で書くこと
-- `gas/line-notify.gs` … LINE 通知用の Google Apps Script（ユーザーが script.google.com に貼って使う。ウェブアプリ `doPost` で予定を受け取り、毎日12時の `dailyNotify` で LINE Messaging API の push）。トークン類はスクリプト プロパティ
+- `gas/line-notify.gs` … クラウド連携用の Google Apps Script（ユーザーが script.google.com に貼って使う）。トークン類はスクリプト プロパティ
+  - LINE 通知：`doPost` で予定を受け取り、毎日12時の `dailyNotify` で LINE Messaging API の push
+  - 同期：`doPost` の `action`（meta / pull / images / putImages / push）。Drive の「沖縄 記憶の宮殿（同期データ）」に state.json と images/<id>。版番号 `SYNC_REV` で古い版からの上書きを断る（衝突はアプリ側で本人に選ばせる）
+  - コードを変えたらユーザーに「デプロイを管理 → 新バージョン」をしてもらう（URL を変えないため）
 - `icon.svg`（PWA/ファビコン）, `icon-180.png`（iPhone のホーム画面）, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
 
@@ -41,7 +44,8 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - `kv` の `vault` キーに Obsidian Vault の FileSystemDirectoryHandle。
 - APIキーは localStorage `loci-okinawa-apikey`（コードには書かない）。
 - 間隔反復：`INTERVALS`（日）と `scheduleNext()` / `dueOf()`。`due` は 'YYYY-MM-DD'。忘れたら streak=0・翌日。
-- LINE 通知：localStorage `loci-okinawa-notify-url`（Apps Script の URL＋`?key=合言葉`）。保存のたびに `uploadNotify()` が宮殿名と日付ごとの数だけを送る（内容は送らない）。
+- LINE 通知：localStorage `loci-okinawa-notify-url`（Apps Script の URL＋`?key=合言葉`）。保存のたびに `uploadNotify()` が宮殿名と日付ごとの数だけを送る。
+- 同期：同じ URL を使う。`save()` → `markCloudDirty()` → 2秒後 `cloudSync()`。起動時・画面に戻ったとき・online でも `cloudSync()`。localStorage `loci-okinawa-sync-rev`（最後にそろえた版）/ `-sync-dirty`（未送信あり）。クラウドから読んだときは `save(true)`（送り返さない）。読み込む直前の state は kv `state-before-sync` に1つだけ控える。
 
 ## Obsidian 書き出し（`syncObsidian()`）
 - Vault: `C:\Users\HARUKI\OneDrive\ドキュメント\Obsidian Vault`
@@ -58,5 +62,4 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - ブラウザでの動作確認は Claude からはできない（APIキーが必要）。ユーザーに確認してもらう。
 
 ## 今後のアイデア（未実装）
-- PC とスマホのデータ同期
 - ズーム時の落書きのずれがあれば視野角の式を調整
