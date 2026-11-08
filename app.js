@@ -537,7 +537,7 @@ let tool = 'move';
 let inkColor = '#ff3b30';
 let penWidth = 6;
 let draft = { panoId: null, items: [], view: null }; // まだ「置く」前の落書き（IndexedDB にも保存）
-let draftText = { item: '', image: '' };             // まだ「置く」前の入力中の文字
+let draftText = { item: '', image: '', question: '' }; // まだ「置く」前の入力中の文字
 let draftTimer = 0;
 
 function saveDraftNow() {
@@ -554,7 +554,7 @@ async function loadDraft() {
     const d = await kv.get('draft');
     if (!d) return;
     draft = { panoId: d.panoId ?? null, items: d.items || [], view: d.view || null };
-    draftText = { item: d.text?.item || '', image: d.text?.image || '' };
+    draftText = { item: d.text?.item || '', image: d.text?.image || '', question: d.text?.question || '' };
   } catch (e) { console.error(e); }
 }
 window.addEventListener('pagehide', () => { if (draftTimer) saveDraftNow(); });
@@ -1185,7 +1185,10 @@ function palaceMarkdown(p, imgExt) {
     const imgs = ink.filter((x) => x.type === 'image' && imgExt[x.img]);
     if (imgs.length) out.push('', imgs.map((x) => `![[${VAULT_FOLDER}/${IMG_FOLDER}/${x.img}.${imgExt[x.img]}|200]]`).join(' '));
     // Spaced Repetition プラグイン用のカード（質問::答え）
-    out.push('', `${p.name} の ${i + 1} 番目の場所に置いたものは？::${oneLine(l.item)}`, '');
+    out.push('', `${p.name} の ${i + 1} 番目の場所に置いたものは？::${oneLine(l.item)}`);
+    const hint = hintOf(l);
+    if (hint) out.push(`「${oneLine(hint)}」を英語で::${oneLine(l.item)}`);
+    out.push('');
   });
   return out.join('\n');
 }
@@ -1356,6 +1359,9 @@ function buildHTML() {
     <label>覚えること
       <textarea id="itemInput" rows="2" placeholder="例：apple = りんご">${esc(ed ? ed.item : draftText.item)}</textarea>
     </label>
+    <label>日本語の問題（なくてもよい）
+      <input id="questionInput" type="text" placeholder="例：〜することになっている（空なら「覚えること」の（ ）の中を使う）" value="${esc(ed ? ed.question || '' : draftText.question)}">
+    </label>
     <label>連想イメージ（場所と結びつける、変で鮮やかな光景）
       <textarea id="imageInput" rows="3" placeholder="例：シーサーの口から巨大なりんごがゴロゴロ転がり出てくる">${esc(ed ? ed.image : draftText.image)}</textarea>
     </label>
@@ -1379,6 +1385,21 @@ function buildHTML() {
     <p class="count">「${esc(cur().name)}」の場所：${cur().loci.length} 個</p>`;
 }
 
+// 日本語の問題：「日本語の問題」欄。空なら「覚えること」の最後の（ ）の中（例：I'm supposed to 〜（〜することになっている））
+// ※ gas/line-notify.gs の hintOf_() と同じ決まりにすること
+function hintOf(l) {
+  if (l.question && l.question.trim()) return l.question.trim();
+  const m = String(l.item || '').match(/[（(]([^（）()]+)[）)]\s*$/);
+  return m ? m[1].trim() : '';
+}
+const HINT_STORAGE = 'loci-okinawa-hint';
+const showHint = () => ls.get(HINT_STORAGE) !== '0'; // 最初は「出す」
+
+function hintToggleHTML() {
+  return `<label class="check"><input type="checkbox" id="hintToggle" ${showHint() ? 'checked' : ''}>
+    日本語の問題を出す（日本語 → 英語）</label>`;
+}
+
 function reviewHTML() {
   const loci = cur().loci;
   const weak = loci.filter((l) => l.stats?.lastOk !== true).length;
@@ -1395,6 +1416,7 @@ function reviewHTML() {
         <button data-action="review-all">最初から順に</button>
         <button data-action="review-weak">苦手・未復習だけ</button>
       </div>
+      ${hintToggleHTML()}
       <p class="hint">「覚えてた」が続くほど、次の復習までの間が 1日 → 3日 → 1週間 → 2週間 → 1か月 → 2か月 → 4か月 とのびます。忘れたら翌日からやり直しです。</p>
       <p class="hint" style="margin-top:16px">キーボード：Enter＝答えを見る、1＝覚えてた、2＝忘れた</p>`;
   }
@@ -1412,9 +1434,11 @@ function reviewHTML() {
   }
 
   const l = findLocus(review.queue[review.idx]);
+  const hint = showHint() ? hintOf(l) : '';
   return `
     <p class="progress">${review.idx + 1} / ${review.queue.length}　（場所 #${numOf(l)}）</p>
     <p class="question">この場所に何を置いた？</p>
+    ${hint ? `<p class="hint-ja">🇯🇵 「${esc(hint)}」<small>を英語で言うと？（声に出してから答えを見よう）</small></p>` : ''}
     ${review.revealed
       ? `<div class="answer">
            <div class="item">${esc(l.item)}</div>
@@ -1425,7 +1449,8 @@ function reviewHTML() {
            <button class="ng" data-action="ng">忘れた ✗</button>
          </div>`
       : `<div class="row-btns"><button class="primary" data-action="reveal">答えを見る</button></div>`}
-    <div class="row-btns"><button class="ghost" data-action="review-end">中断する</button></div>`;
+    <div class="row-btns"><button class="ghost" data-action="review-end">中断する</button></div>
+    ${hintToggleHTML()}`;
 }
 
 function listHTML() {
@@ -1457,16 +1482,18 @@ function setMode(m) { mode = m; renderPanel(); }
 function addLocus() {
   const item = $('#itemInput').value.trim();
   const image = $('#imageInput').value.trim();
+  const question = $('#questionInput').value.trim();
   if (!item) return toast('「覚えること」を入力してください');
   if (!pano || !pano.getPano()) return toast('ストリートビューが表示されていません');
   if (!inOkinawa(pano.getPosition())) return toast('沖縄の中の場所を選んでください');
   const view = currentView();
   const ink = draft.panoId === view.panoId ? draft.items : [];
   draft = { panoId: null, items: [], view: null };
-  draftText = { item: '', image: '' };
+  draftText = { item: '', image: '', question: '' };
   saveDraftNow();
   cur().loci.push({
     id: uid(), ...view, item, image, ink,
+    ...(question ? { question } : {}),
     stats: { ok: 0, ng: 0, lastOk: null, lastAt: null }, createdAt: Date.now(),
   });
   save();
@@ -1486,6 +1513,8 @@ function updateLocus(moveHere) {
     if (!item) return toast('「覚えること」を入力してください');
     l.item = item;
     l.image = $('#imageInput').value.trim();
+    const question = $('#questionInput').value.trim();
+    if (question) l.question = question; else delete l.question;
     editingId = null;
     toast('更新しました');
   }
@@ -1783,11 +1812,19 @@ $('#mapToggle').addEventListener('click', () => {
   $('#mapToggle').textContent = big ? '縮小' : '拡大';
 });
 
+// 「日本語の問題を出す」の切り替え（端末ごとに覚えておく）
+$('#content').addEventListener('change', (e) => {
+  if (e.target.id !== 'hintToggle') return;
+  ls.set(HINT_STORAGE, e.target.checked ? '1' : '0');
+  renderPanel();
+});
+
 // 入力中の文字も書きかけとして保存（アプリを閉じても残る）
 $('#content').addEventListener('input', (e) => {
   if (editingId) return;
   if (e.target.id === 'itemInput') draftText.item = e.target.value;
   else if (e.target.id === 'imageInput') draftText.image = e.target.value;
+  else if (e.target.id === 'questionInput') draftText.question = e.target.value;
   else return;
   saveDraftSoon();
 });

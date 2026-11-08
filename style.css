@@ -112,6 +112,10 @@ a.btn {
 
 .progress { font-size: 13px; color: var(--muted); }
 .question { font-size: 18px; font-weight: 700; margin: 10px 0 14px; }
+.hint-ja { font-size: 18px; font-weight: 700; margin: -6px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--hint-bg, rgba(27, 153, 139, .12)); }
+.hint-ja small { display: block; font-size: 12px; font-weight: 400; opacity: .75; margin-top: 2px; }
+#content label.check { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 12px; cursor: pointer; }
+#content label.check input { width: auto; margin: 0; }
 .answer { background: #f0faf8; border: 1px solid #cdeee8; border-radius: 10px; padding: 12px; }
 .answer .item { font-size: 20px; font-weight: 700; white-space: pre-wrap; }
 .answer .image { margin-top: 8px; font-size: 14px; color: #355; white-space: pre-wrap; }

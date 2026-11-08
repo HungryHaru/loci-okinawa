@@ -73,7 +73,8 @@ function notifyFromState_(st) {
     q.push('', '【' + g.name + '】');
     a.push('', '【' + g.name + '】');
     items.forEach(function (x) {
-      q.push('#' + x.n + ' ' + svUrl_(x.l));
+      const h = hintOf_(x.l);
+      q.push('#' + x.n + (h ? ' 🇯🇵「' + h + '」を英語で' : '') + '\n' + svUrl_(x.l));
       a.push('#' + x.n + ' ' + oneLine_(x.l.item));
     });
   });
@@ -95,6 +96,12 @@ function svUrl_(l) {
   const fov = Math.round(Math.max(10, Math.min(100, 180 / Math.pow(2, l.zoom == null ? 1 : l.zoom))));
   return 'https://www.google.com/maps/@?api=1&map_action=pano&pano=' + encodeURIComponent(l.panoId) +
     '&heading=' + Math.round(l.heading) + '&pitch=' + Math.round(l.pitch) + '&fov=' + fov;
+}
+// アプリの hintOf() と同じ決まり：「日本語の問題」欄、なければ「覚えること」の最後の（ ）の中
+function hintOf_(l) {
+  if (l.question && String(l.question).trim()) return oneLine_(l.question);
+  const m = String(l.item || '').match(/[（(]([^（）()]+)[）)]\s*$/);
+  return m ? oneLine_(m[1]) : '';
 }
 function oneLine_(t) { return String(t || '').replace(/\s+/g, ' ').trim(); }
 

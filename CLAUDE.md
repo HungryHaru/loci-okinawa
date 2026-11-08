@@ -36,7 +36,8 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 
 ## データ
 - `state = { palaces: [{ id, name, createdAt, loci: [...] }], currentId }` を IndexedDB `loci-okinawa` の `kv` ストア `state` キーに保存（`save()` で自動保存、旧 localStorage からは自動移行）。
-- locus: `{ id, panoId, lat, lng, heading, pitch, zoom, item, image, ink: [], stats: { ok, ng, lastOk, lastAt, streak, due }, createdAt }`
+- locus: `{ id, panoId, lat, lng, heading, pitch, zoom, item, image, question?, ink: [], stats: { ok, ng, lastOk, lastAt, streak, due }, createdAt }`
+  - `question`（任意）は日本語の問題。`hintOf()` は question → なければ item の最後の（ ）の中。gas の `hintOf_()` と同じ決まりにする。復習で出すかは localStorage `loci-okinawa-hint`
 - ink アイテムは角度座標 `[heading, pitch]`（度）で保存し、`camera()` / `angleToScreen()` で投影（視野角 = 180 / 2^zoom と仮定）。
   - `{ type: 'stroke', color, width, pts: [[h,p],...] }`
   - `{ type: 'note', at: [h,p], text, color }`
