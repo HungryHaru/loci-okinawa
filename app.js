@@ -238,6 +238,27 @@ async function cloudConflict(rev, first) {
   else await cloudPush(rev);
 }
 
+// クラウドのバックアップ（毎日1つ、7日分）から戻す
+async function restoreFromCloud() {
+  if (!notifyUrl()) return toast('先に「クラウド連携の設定」をしてください');
+  let dates;
+  try { dates = (await cloudCall({ action: 'backups' })).dates || []; }
+  catch (e) { return toast('バックアップの一覧を読めませんでした：' + e.message); }
+  if (!dates.length) return toast('まだバックアップがありません（毎日 12 時ごろに作られます）');
+  const v = prompt('どの日のバックアップに戻しますか？ 番号を入れてください。\n（その日の 12 時ごろの内容に戻ります）\n\n' +
+    dates.map((d, i) => `${i + 1}：${d}`).join('\n'), '1');
+  if (v === null) return;
+  const date = dates[Number(v) - 1];
+  if (!date) return toast('番号が正しくありません');
+  if (!confirm(`${date} の内容に戻します。今のデータは、PC・スマホとも置き換わります。よろしいですか？`)) return;
+  try {
+    await cloudCall({ action: 'restore', date });
+    ls.del(SYNC_DIRTY);
+    await cloudPull();
+    toast(`${date} の内容に戻しました`);
+  } catch (e) { toast('戻せませんでした：' + e.message); }
+}
+
 async function setupNotify() {
   const now = notifyUrl();
   const v = prompt(
@@ -1701,6 +1722,8 @@ function handleMenu(cmd) {
     unlinkVault();
   } else if (cmd === 'notify') {
     setupNotify();
+  } else if (cmd === 'restore') {
+    restoreFromCloud();
   } else if (cmd === 'key') {
     showSetup('新しい API キーを入力してください。', true);
   }

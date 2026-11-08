@@ -16,8 +16,9 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く。Origin チェックあり）。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
 - `start-app.ps1` … デスクトップショートカット用ランチャー（server.py を 127.0.0.1:8000 で起動 → Chrome `--app` で開く。ブラウザは Chrome に統一）。PS 5.1 が読むので **ASCII のみ**で書くこと
 - `gas/line-notify.gs` … クラウド連携用の Google Apps Script（ユーザーが script.google.com に貼って使う）。トークン類はスクリプト プロパティ
-  - LINE 通知：`doPost` で予定を受け取り、毎日12時の `dailyNotify` で LINE Messaging API の push
-  - 同期：`doPost` の `action`（meta / pull / images / putImages / push）。Drive の「沖縄 記憶の宮殿（同期データ）」に state.json と images/<id>。版番号 `SYNC_REV` で古い版からの上書きを断る（衝突はアプリ側で本人に選ばせる）
+  - 毎日12時の `dailyNotify`：① `dailyBackup_()`（Drive の backups/ に state-YYYY-MM-DD.json を7日分。今の state にもバックアップにも使われていない画像をゴミ箱へ）② `notifyFromState_()`（state.json から今日の復習を計算し、問題＝Street View リンク、答え＝下の方、最大15か所）。同期データがなければ旧方式 `notifyFromSchedule_()`（アプリが送った日付ごとの数）
+  - `isDue_()` はアプリの `dueOf()` と同じ決まりにすること（片方を変えたら両方直す）
+  - 同期：`doPost` の `action`（meta / pull / images / putImages / push / backups / restore）。push では画像を消さない（片付けは毎日のバックアップ時）。Drive の「沖縄 記憶の宮殿（同期データ）」に state.json と images/<id>。版番号 `SYNC_REV` で古い版からの上書きを断る（衝突はアプリ側で本人に選ばせる）
   - コードを変えたらユーザーに「デプロイを管理 → 新バージョン」をしてもらう（URL を変えないため）
 - `icon.svg`（PWA/ファビコン）, `icon-180.png`（iPhone のホーム画面）, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
