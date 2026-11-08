@@ -19,6 +19,10 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - `icon.svg`（PWA/ファビコン）, `icon.ico`（ショートカット用）, `manifest.json`
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
 
+## git
+- このフォルダ専用のリポジトリ（ブランチ `main`）。ホームフォルダ `C:\Users\HARUKI` にも別の古い練習用リポジトリ（sample-chatbot）があるが無関係なので触らない。
+- バックアップ JSON（`loci-okinawa-*.json`）は `.gitignore` で除外。
+
 ## データ
 - `state = { palaces: [{ id, name, createdAt, loci: [...] }], currentId }` を IndexedDB `loci-okinawa` の `kv` ストア `state` キーに保存（`save()` で自動保存、旧 localStorage からは自動移行）。
 - locus: `{ id, panoId, lat, lng, heading, pitch, zoom, item, image, ink: [], stats: { ok, ng, lastOk, lastAt, streak, due }, createdAt }`
