@@ -35,8 +35,9 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - データ（IndexedDB）は PC の localhost 版とは別の保存場所になる。
 
 ## データ
-- `state = { palaces: [{ id, name, createdAt, loci: [...] }], currentId }` を IndexedDB `loci-okinawa` の `kv` ストア `state` キーに保存（`save()` で自動保存、旧 localStorage からは自動移行）。
+- `state = { palaces: [{ id, name, createdAt, loci: [...] }], currentId, history: { 'YYYY-MM-DD': [覚えてた, 忘れた] } }` を IndexedDB `loci-okinawa` の `kv` ストア `state` キーに保存（`save()` で自動保存、旧 localStorage からは自動移行）。
 - locus: `{ id, panoId, lat, lng, heading, pitch, zoom, name?, item, image, question?, ink: [], stats: { ok, ng, lastOk, lastAt, streak, due }, createdAt }`
+  - 記録タブ（`statsHTML()`）：連続日数 `streakDays()`（gas の `streakDays_()` と同じ決まり）、覚え具合 `levelOf()`（streak 0-2 覚え中／3-4 定着／5+ 長期記憶）、12週カレンダー。history は `answer()` → `recordHistory()` で記録、400日より前は消す
   - `name`（任意）は目印の名前（一覧・復習・ピン・LINE・Obsidian に表示）。`question`（任意）は日本語の問題。`hintOf()` は question → なければ item の最後の（ ）の中。gas の `hintOf_()` と同じ決まりにする。復習で出すかは localStorage `loci-okinawa-hint`
 - ink アイテムは角度座標 `[heading, pitch]`（度）で保存し、`camera()` / `angleToScreen()` で投影（視野角 = 180 / 2^zoom と仮定）。
   - `{ type: 'stroke', color, width, pts: [[h,p],...] }`

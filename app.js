@@ -47,6 +47,15 @@ async function loadState() {
 }
 function ensureState(s) {
   if (!s.palaces.length) s.palaces.push(newPalace('はじめての宮殿'));
+  if (!s.history) { // 日ごとの復習の記録 { 'YYYY-MM-DD': [覚えてた, 忘れた] }。初回は各場所の最後の復習から作る
+    s.history = {};
+    s.palaces.forEach((p) => p.loci.forEach((l) => {
+      if (!l.stats?.lastAt) return;
+      const d = dayStr(new Date(l.stats.lastAt));
+      const h = s.history[d] || (s.history[d] = [0, 0]);
+      h[l.stats.lastOk ? 0 : 1]++;
+    }));
+  }
   if (!s.palaces.some((p) => p.id === s.currentId)) s.currentId = s.palaces[0].id;
   return s;
 }
@@ -1341,7 +1350,7 @@ function renderPalaceSelect() {
 function renderPanel() {
   document.querySelectorAll('.tabs button').forEach((b) =>
     b.classList.toggle('active', b.dataset.mode === mode));
-  const html = { build: buildHTML, review: reviewHTML, list: listHTML }[mode]();
+  const html = { build: buildHTML, review: reviewHTML, list: listHTML, stats: statsHTML }[mode]();
   $('#content').innerHTML = html;
   // 復習中は落書きツールを隠す
   const r = reviewing();
@@ -1389,6 +1398,114 @@ function buildHTML() {
     <p class="count">「${esc(cur().name)}」の場所：${cur().loci.length} 個</p>`;
 }
 
+// ===== 成果の記録 =====
+function recordHistory(ok) {
+  const h = state.history || (state.history = {});
+  const d = dayStr();
+  (h[d] || (h[d] = [0, 0]))[ok ? 0 : 1]++;
+  const old = addDays(d, -400); // 1年ちょっとより前は消す
+  Object.keys(h).forEach((k) => { if (k < old) delete h[k]; });
+}
+const dayTotal = (d) => { const h = state.history?.[d]; return h ? h[0] + h[1] : 0; };
+// 連続日数：今日まだ復習していなくても、昨日まで続いていれば数える（※ gas の streakDays_() と同じ決まり）
+function streakDays() {
+  let d = dayStr();
+  if (!dayTotal(d)) d = addDays(d, -1);
+  let n = 0;
+  while (dayTotal(d)) { n++; d = addDays(d, -1); }
+  return n;
+}
+function bestStreak() {
+  const days = Object.keys(state.history || {}).filter((d) => dayTotal(d)).sort();
+  let best = 0, run = 0, prev = '';
+  days.forEach((d) => { run = prev && addDays(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; });
+  return best;
+}
+// 覚え具合：未復習／覚え中（連続正解 0〜2）／定着（3〜4：1〜2週間後に正解）／長期記憶（5以上：1か月以上）
+const LEVELS = [
+  { key: 'new', label: '未復習', color: '#e5e1d8' },
+  { key: 'learn', label: '覚え中', color: '#a8ddd5' },
+  { key: 'solid', label: '定着', color: '#3fae9f' },
+  { key: 'long', label: '長期記憶', color: '#17665d' },
+];
+function levelOf(l) {
+  const s = l.stats || {};
+  if (!s.lastAt) return 'new';
+  const k = s.streak || 0;
+  return k >= 5 ? 'long' : k >= 3 ? 'solid' : 'learn';
+}
+function levelCounts(loci) {
+  const c = { new: 0, learn: 0, solid: 0, long: 0 };
+  loci.forEach((l) => c[levelOf(l)]++);
+  return c;
+}
+
+function levelBarHTML(loci) {
+  const c = levelCounts(loci), n = loci.length || 1;
+  return `<div class="lvbar" role="img" aria-label="${LEVELS.map((v) => `${v.label} ${c[v.key]}`).join('、')}">
+    ${LEVELS.filter((v) => c[v.key]).map((v) =>
+      `<span style="flex:${c[v.key] / n};background:${v.color}" title="${v.label}：${c[v.key]} 個"></span>`).join('')}
+  </div>`;
+}
+
+// 12 週間のカレンダー（色が濃いほど たくさん復習した日）
+const HEAT = ['#eeece6', '#c9ebe5', '#8fd0c6', '#3fae9f', '#17665d'];
+const heatStep = (n) => (n === 0 ? 0 : n <= 3 ? 1 : n <= 9 ? 2 : n <= 19 ? 3 : 4);
+function heatmapHTML() {
+  const today = dayStr();
+  const t = new Date();
+  const dow = (t.getDay() + 6) % 7; // 月曜=0
+  const start = addDays(today, -(7 * 11 + dow)); // 12 週前の月曜
+  const cells = [];
+  for (let i = 0; i < 7 * 12; i++) {
+    const d = addDays(start, i);
+    if (d > today) { cells.push('<span class="hm-cell future"></span>'); continue; }
+    const h = state.history?.[d] || [0, 0];
+    const n = h[0] + h[1];
+    const tip = `${d.slice(5).replace('-', '/')}：${n ? `${n} 回（✓${h[0]} ✗${h[1]}）` : '復習なし'}`;
+    cells.push(`<span class="hm-cell${d === today ? ' today' : ''}" style="background:${HEAT[heatStep(n)]}" title="${tip}" data-tip="${tip}"></span>`);
+  }
+  return `<div class="heatmap" role="img" aria-label="12 週間の復習カレンダー">
+      <div class="hm-days"><span>月</span><span></span><span>水</span><span></span><span>金</span><span></span><span>日</span></div>
+      <div class="hm-grid">${cells.join('')}</div>
+    </div>
+    <div class="hm-legend">少ない ${HEAT.map((c) => `<span class="hm-cell" style="background:${c}"></span>`).join('')} 多い</div>`;
+}
+
+function statsHTML() {
+  const all = state.palaces.flatMap((p) => p.loci);
+  const c = levelCounts(all);
+  const learned = c.solid + c.long;
+  let wok = 0, wng = 0;
+  for (let i = 0; i < 7; i++) { const h = state.history?.[addDays(dayStr(), -i)]; if (h) { wok += h[0]; wng += h[1]; } }
+  const wn = wok + wng;
+  const streak = streakDays();
+  const total = Object.values(state.history || {}).reduce((n, h) => n + h[0] + h[1], 0);
+  return `
+    <div class="tiles">
+      <div class="tile"><div class="tile-num">${streak ? '🔥 ' : ''}${streak}<small>日</small></div><div class="tile-lbl">連続で復習${streak ? '' : '（今日からスタート！）'}</div></div>
+      <div class="tile"><div class="tile-num">${learned}<small> / ${all.length}</small></div><div class="tile-lbl">覚えた場所</div></div>
+      <div class="tile"><div class="tile-num">${wn ? Math.round(wok / wn * 100) : '–'}<small>${wn ? '%' : ''}</small></div><div class="tile-lbl">今週の正解率${wn ? `（${wok}/${wn}）` : ''}</div></div>
+      <div class="tile"><div class="tile-num">${dueCountAll()}<small> か所</small></div><div class="tile-lbl">今日の復習の残り</div></div>
+    </div>
+
+    <h3 class="sec">復習カレンダー（12 週間）</h3>
+    ${heatmapHTML()}
+    <p class="hint">これまでの復習：${total} 回 ／ 最長の連続：${bestStreak()} 日</p>
+
+    <h3 class="sec">覚え具合</h3>
+    ${levelBarHTML(all)}
+    <ul class="lv-legend">${LEVELS.map((v) => `<li><span class="sw" style="background:${v.color}"></span>${v.label}<b>${c[v.key]}</b></li>`).join('')}</ul>
+    <p class="hint">定着＝続けて 3 回正解（1〜2 週間あけても覚えていた）、長期記憶＝続けて 5 回以上（1 か月以上あけても覚えていた）。</p>
+
+    ${state.palaces.length > 1 ? `
+    <h3 class="sec">宮殿ごと</h3>
+    <ul class="pal-stats">${state.palaces.map((p) => {
+      const pc = levelCounts(p.loci);
+      return `<li><div class="pal-row"><span>${esc(p.name)}</span><small>覚えた ${pc.solid + pc.long} / ${p.loci.length}</small></div>${levelBarHTML(p.loci)}</li>`;
+    }).join('')}</ul>` : ''}`;
+}
+
 // 日本語の問題：「日本語の問題」欄。空なら「覚えること」の最後の（ ）の中（例：I'm supposed to 〜（〜することになっている））
 // ※ gas/line-notify.gs の hintOf_() と同じ決まりにすること
 function hintOf(l) {
@@ -1428,7 +1545,7 @@ function reviewHTML() {
   if (review.idx >= review.queue.length) {
     const total = review.ok + review.ng;
     return `
-      <p class="progress">おつかれさま！</p>
+      <p class="progress">おつかれさま！${streakDays() > 1 ? `　🔥 ${streakDays()} 日連続！` : ''}</p>
       <div class="score">${review.ok} / ${total}</div>
       <p class="hint">${review.ng ? '忘れた場所は「苦手」に入ります。連想イメージをもっと大げさにすると覚えやすくなります。' : '全部覚えていました 🎉'}</p>
       <div class="row-btns">
@@ -1668,6 +1785,7 @@ function answer(ok) {
   l.stats = l.stats || { ok: 0, ng: 0 };
   if (ok) { l.stats.ok++; review.ok++; } else { l.stats.ng++; review.ng++; }
   scheduleNext(l, ok); // lastAt を更新する前に、次の復習日を決める
+  recordHistory(ok);
   l.stats.lastOk = ok;
   l.stats.lastAt = Date.now();
   save();
@@ -1819,6 +1937,12 @@ $('#searchInput').addEventListener('keydown', (e) => { if (e.key === 'Escape') c
 $('#mapToggle').addEventListener('click', () => {
   const big = $('#mapWrap').classList.toggle('big');
   $('#mapToggle').textContent = big ? '縮小' : '拡大';
+});
+
+// カレンダーのマスを押すと、その日の回数を出す（スマホはマウスを乗せられないため）
+$('#content').addEventListener('click', (e) => {
+  const c = e.target.closest('.hm-cell[data-tip]');
+  if (c) toast(c.dataset.tip);
 });
 
 // 「日本語の問題を出す」の切り替え（端末ごとに覚えておく）

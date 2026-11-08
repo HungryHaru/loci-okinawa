@@ -113,6 +113,30 @@ a.btn {
 .progress { font-size: 13px; color: var(--muted); }
 .question { font-size: 18px; font-weight: 700; margin: 10px 0 14px; }
 .loci .landmark { color: var(--accent2, #1b998b); font-weight: 600; }
+/* 記録タブ */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.tile { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel); }
+.tile-num { font-size: 26px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.tile-num small { font-size: 13px; font-weight: 600; color: var(--muted); }
+.tile-lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+h3.sec { font-size: 14px; margin: 18px 0 8px; }
+.heatmap { display: flex; gap: 4px; }
+.hm-days { display: grid; grid-template-rows: repeat(7, 14px); gap: 3px; font-size: 10px; color: var(--muted); line-height: 14px; }
+.hm-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 14px); grid-auto-columns: 14px; gap: 3px; }
+.hm-cell { display: inline-block; width: 14px; height: 14px; border-radius: 3px; }
+.hm-cell[data-tip] { cursor: pointer; }
+.hm-cell.future { background: transparent; }
+.hm-cell.today { outline: 2px solid var(--text); outline-offset: -1px; }
+.hm-legend { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.lvbar { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; background: var(--line); }
+.lvbar span { min-width: 4px; }
+.lv-legend { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; }
+.lv-legend li { display: flex; align-items: center; gap: 5px; }
+.lv-legend b { font-variant-numeric: tabular-nums; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.pal-stats { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.pal-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+.pal-row small { color: var(--muted); }
 .hint-ja { font-size: 18px; font-weight: 700; margin: -6px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--hint-bg, rgba(27, 153, 139, .12)); }
 .hint-ja small { display: block; font-size: 12px; font-weight: 400; opacity: .75; margin-top: 2px; }
 #content label.check { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 12px; cursor: pointer; }

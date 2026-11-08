@@ -62,7 +62,9 @@ function notifyFromState_(st) {
   });
   if (!total) return; // 今日の復習がない日は送らない（無料の通数を節約）
 
-  const q = ['🧠 今日の復習：' + total + ' か所', '景色を開いて、置いたものを思い出そう。'];
+  const streak = streakDays_(st.history || {}, today);
+  const q = ['🧠 今日の復習：' + total + ' か所' + (streak ? '　🔥 ' + streak + ' 日連続中' : ''),
+    '景色を開いて、置いたものを思い出そう。'];
   const a = [];
   let shown = 0;
   groups.forEach(function (g) {
@@ -84,6 +86,19 @@ function notifyFromState_(st) {
   const spacer = ['', '▼ 答え（思い出してからスクロール）'].concat(new Array(12).fill('・'));
   const tail = ['', 'アプリの「復習」→「今日の復習」で記録しよう！'];
   pushLine_(q.concat(spacer, a, tail).join('\n').slice(0, 4900)); // LINE の上限は 5000 文字
+}
+
+// アプリの streakDays() と同じ決まり：今日まだでも、昨日まで続いていれば数える
+function streakDays_(h, today) {
+  const total = function (d) { const x = h[d]; return x ? x[0] + x[1] : 0; };
+  const prev = function (d) {
+    const p = d.split('-').map(Number);
+    return Utilities.formatDate(new Date(Date.UTC(p[0], p[1] - 1, p[2] - 1, 3)), TZ, 'yyyy-MM-dd');
+  };
+  let d = today, n = 0;
+  if (!total(d)) d = prev(d);
+  while (total(d)) { n++; d = prev(d); }
+  return n;
 }
 
 // アプリの dueOf() と同じ決まり：予定日があればそれ、未復習は今日、古いデータは最後の復習の翌日
