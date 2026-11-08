@@ -37,7 +37,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 ## データ
 - `state = { palaces: [{ id, name, createdAt, loci: [...] }], currentId, history: { 'YYYY-MM-DD': [覚えてた, 忘れた] } }` を IndexedDB `loci-okinawa` の `kv` ストア `state` キーに保存（`save()` で自動保存、旧 localStorage からは自動移行）。
 - locus: `{ id, panoId, lat, lng, heading, pitch, zoom, name?, item, image, question?, ink: [], stats: { ok, ng, lastOk, lastAt, streak, due }, createdAt }`
-  - 記録タブ（`statsHTML()`）：連続日数 `streakDays()`（gas の `streakDays_()` と同じ決まり）、覚え具合 `levelOf()`（streak 0-2 覚え中／3-4 定着／5+ 長期記憶）、12週カレンダー。history は `answer()` → `recordHistory()` で記録、400日より前は消す
+  - 記録タブ（`statsHTML()`）：次の復習日 `nextReview()`（毎日やらせる「連続日数」は、ユーザーの希望で廃止）、覚え具合 `levelOf()`（streak 0-2 覚え中／3-4 定着／5+ 長期記憶）、12週カレンダー。history は `answer()` → `recordHistory()` で記録、400日より前は消す
   - `name`（任意）は目印の名前（一覧・復習・ピン・LINE・Obsidian に表示）。`question`（任意）は日本語の問題。`hintOf()` は question → なければ item の最後の（ ）の中。gas の `hintOf_()` と同じ決まりにする。復習で出すかは localStorage `loci-okinawa-hint`
 - ink アイテムは角度座標 `[heading, pitch]`（度）で保存し、`camera()` / `angleToScreen()` で投影（視野角 = 180 / 2^zoom と仮定）。
   - `{ type: 'stroke', color, width, pts: [[h,p],...] }`
@@ -46,7 +46,10 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - 画像データ（dataURL、384px に縮小・白背景透過）は IndexedDB `images` ストア。起動時に未参照を `gcImages()` で削除。
 - `kv` の `vault` キーに Obsidian Vault の FileSystemDirectoryHandle。
 - APIキーは localStorage `loci-okinawa-apikey`（コードには書かない）。
-- 間隔反復：`INTERVALS`（日）と `scheduleNext()` / `dueOf()`。`due` は 'YYYY-MM-DD'。忘れたら streak=0・翌日。
+- 間隔反復：`INTERVALS`（日）と `scheduleNext()` / `dueOf()`。`due` は 'YYYY-MM-DD'。忘れたら streak=0・翌日。未復習は置いた日が復習日。
+  - `EARLY_DAYS`=2：2日以内に予定の場所は「今日の復習」にまとめ、前倒しでも正解なら間隔を進める（復習日を集めて毎日にしない）。同じ日の2回目は進めない
+  - `joinDay()`：次の復習日の近く（最低 1日前〜3日後、長い間隔は ±2割）にほかの場所の復習日があれば合わせる。忘れた場所は 1〜3日後の既存の復習日に合流
+  - LINE は「ちょうど今日が復習日」の場所がある日だけ（忘れてやり直し中の場所だけなら3日後、遅れは1週間後に1回）。ユーザーの希望：毎日の復習はきついので、ポイントの日だけ
 - LINE 通知：localStorage `loci-okinawa-notify-url`（Apps Script の URL＋`?key=合言葉`）。保存のたびに `uploadNotify()` が宮殿名と日付ごとの数だけを送る。
 - 同期：同じ URL を使う。`save()` → `markCloudDirty()` → 2秒後 `cloudSync()`。起動時・画面に戻ったとき・online でも `cloudSync()`。localStorage `loci-okinawa-sync-rev`（最後にそろえた版）/ `-sync-dirty`（未送信あり）。クラウドから読んだときは `save(true)`（送り返さない）。読み込む直前の state は kv `state-before-sync` に1つだけ控える。
 

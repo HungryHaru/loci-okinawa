@@ -79,23 +79,54 @@ function addDays(str, n) {
   const [y, m, d] = str.split('-').map(Number);
   return dayStr(new Date(y, m - 1, d + n));
 }
-// 次の復習日。まだ一度も復習していない場所は「今日」
+// 次の復習日（※ gas/line-notify.gs の dueOf_() と同じ決まりにすること）
+// まだ一度も復習していない場所は「置いた日」
 function dueOf(l) {
   const s = l.stats || {};
   if (s.due) return s.due;
-  if (!s.lastAt) return dayStr();
+  if (!s.lastAt) return l.createdAt ? dayStr(new Date(l.createdAt)) : dayStr();
   return addDays(dayStr(new Date(s.lastAt)), 1); // 間隔反復を入れる前に復習した場所
 }
-const isDue = (l) => dueOf(l) <= dayStr();
+// 復習日が近い場所はまとめて前倒しで復習してよい（復習する日を集めて、毎日にならないようにする）
+const EARLY_DAYS = 2;
+const isDue = (l) => dueOf(l) <= dayStr();                              // 今日が復習日（または過ぎている）
+const inSession = (l) => dueOf(l) <= addDays(dayStr(), EARLY_DAYS);    // 今日まとめて復習する
 function scheduleNext(l, ok) {
   const s = l.stats;
   const today = dayStr();
-  if (!ok) { s.streak = 0; s.due = addDays(today, 1); return; }
-  if (dueOf(l) > today) return; // 予定より早い復習は、間隔をのばさない（同じ日に何度やっても進まない）
+  if (!ok) { s.streak = 0; s.due = joinDay(l, addDays(today, 1), 0, 2); return; } // 忘れた → 3日以内の復習日に合流
+  if (dueOf(l) > addDays(today, EARLY_DAYS)) return; // 予定よりずっと早い復習は、間隔をのばさない
+  if (s.lastAt && s.lastOk && dayStr(new Date(s.lastAt)) === today) return; // 同じ日に何度やっても進まない
   s.streak = (s.streak || 0) + 1;
-  s.due = addDays(today, INTERVALS[Math.min(s.streak, INTERVALS.length) - 1]);
+  const iv = INTERVALS[Math.min(s.streak, INTERVALS.length) - 1];
+  const tol = Math.floor(iv * 0.2); // 間隔の 2 割までなら前後にずらしてよい（最低でも 1日前〜3日後。30日→±6）
+  s.due = joinDay(l, addDays(today, iv), Math.max(1, tol), Math.max(3, tol)); // 少し後ろまで広めに合わせる
+}
+// target の前後（before 日前〜after 日後）に、ほかの場所の復習日があればそこに合わせる（復習する日を集める）
+function joinDay(self, target, before, after) {
+  const days = new Set();
+  const today = dayStr();
+  state.palaces.forEach((p) => p.loci.forEach((l) => { if (l !== self) { const d = dueOf(l); if (d > today) days.add(d); } }));
+  let best = target, dist = Infinity;
+  for (let k = -before; k <= after; k++) {
+    const d = addDays(target, k);
+    if (d > today && days.has(d) && Math.abs(k) < dist) { best = d; dist = Math.abs(k); }
+  }
+  return best;
 }
 const dueCountAll = () => state.palaces.reduce((n, p) => n + p.loci.filter(isDue).length, 0);
+// 次の復習日（今日より後でいちばん近い日）と、その日の数
+function nextReview() {
+  const today = dayStr();
+  let day = '', n = 0;
+  state.palaces.forEach((p) => p.loci.forEach((l) => {
+    const d = dueOf(l);
+    if (d <= today) return;
+    if (!day || d < day) { day = d; n = 1; } else if (d === day) n++;
+  }));
+  return { day, n };
+}
+const mdOf = (d) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
 
 // ===== LINE 通知（Google Apps Script に「いつ・何か所」だけを送る） =====
 // 送るのは宮殿の名前と、日付ごとの場所の数だけ（覚えた内容や景色は送らない）
@@ -1406,21 +1437,6 @@ function recordHistory(ok) {
   const old = addDays(d, -400); // 1年ちょっとより前は消す
   Object.keys(h).forEach((k) => { if (k < old) delete h[k]; });
 }
-const dayTotal = (d) => { const h = state.history?.[d]; return h ? h[0] + h[1] : 0; };
-// 連続日数：今日まだ復習していなくても、昨日まで続いていれば数える（※ gas の streakDays_() と同じ決まり）
-function streakDays() {
-  let d = dayStr();
-  if (!dayTotal(d)) d = addDays(d, -1);
-  let n = 0;
-  while (dayTotal(d)) { n++; d = addDays(d, -1); }
-  return n;
-}
-function bestStreak() {
-  const days = Object.keys(state.history || {}).filter((d) => dayTotal(d)).sort();
-  let best = 0, run = 0, prev = '';
-  days.forEach((d) => { run = prev && addDays(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; });
-  return best;
-}
 // 覚え具合：未復習／覚え中（連続正解 0〜2）／定着（3〜4：1〜2週間後に正解）／長期記憶（5以上：1か月以上）
 const LEVELS = [
   { key: 'new', label: '未復習', color: '#e5e1d8' },
@@ -1479,19 +1495,20 @@ function statsHTML() {
   let wok = 0, wng = 0;
   for (let i = 0; i < 7; i++) { const h = state.history?.[addDays(dayStr(), -i)]; if (h) { wok += h[0]; wng += h[1]; } }
   const wn = wok + wng;
-  const streak = streakDays();
+  const nx = nextReview();
+  const days = Object.values(state.history || {}).filter((h) => h[0] + h[1]).length;
   const total = Object.values(state.history || {}).reduce((n, h) => n + h[0] + h[1], 0);
   return `
     <div class="tiles">
-      <div class="tile"><div class="tile-num">${streak ? '🔥 ' : ''}${streak}<small>日</small></div><div class="tile-lbl">連続で復習${streak ? '' : '（今日からスタート！）'}</div></div>
+      <div class="tile"><div class="tile-num">${nx.day ? `${mdOf(nx.day)}<small> ${nx.n} か所</small>` : '–'}</div><div class="tile-lbl">次の復習日</div></div>
       <div class="tile"><div class="tile-num">${learned}<small> / ${all.length}</small></div><div class="tile-lbl">覚えた場所</div></div>
       <div class="tile"><div class="tile-num">${wn ? Math.round(wok / wn * 100) : '–'}<small>${wn ? '%' : ''}</small></div><div class="tile-lbl">今週の正解率${wn ? `（${wok}/${wn}）` : ''}</div></div>
-      <div class="tile"><div class="tile-num">${dueCountAll()}<small> か所</small></div><div class="tile-lbl">今日の復習の残り</div></div>
+      <div class="tile"><div class="tile-num">${dueCountAll()}<small> か所</small></div><div class="tile-lbl">今日の復習${dueCountAll() ? 'の残り' : '（なし）'}</div></div>
     </div>
 
     <h3 class="sec">復習カレンダー（12 週間）</h3>
     ${heatmapHTML()}
-    <p class="hint">これまでの復習：${total} 回 ／ 最長の連続：${bestStreak()} 日</p>
+    <p class="hint">これまでの復習：${total} 回 ／ 復習した日：${days} 日。毎日やる必要はありません。復習日が来た日にやれば十分です。</p>
 
     <h3 class="sec">覚え具合</h3>
     ${levelBarHTML(all)}
@@ -1525,27 +1542,31 @@ function reviewHTML() {
   const loci = cur().loci;
   const weak = loci.filter((l) => l.stats?.lastOk !== true).length;
   const due = loci.filter(isDue).length;
+  const near = loci.filter(inSession).length - due; // 2日以内に予定の場所（まとめて前倒し）
   const dueAll = dueCountAll();
+  const nx = nextReview();
 
   if (!review) {
     return `
       <p class="hint">場所を順番に巡ります。<b>答えを見る前に</b>、景色の中に置いたイメージをできるだけ鮮明に思い浮かべよう。</p>
       <p>場所：${loci.length} 個 ／ <b>今日の復習：${due} 個</b> ／ 苦手・未復習：${weak} 個</p>
+      ${!due && !dueAll ? `<p class="hint">🎉 今日の復習はありません。${nx.day ? `次は <b>${mdOf(nx.day)}</b>（${nx.n} か所）です。` : ''}</p>` : ''}
+      ${near ? `<p class="hint">近いうち（2日以内）に予定の ${near} 個も、${due ? '一緒に' : '前倒しで'}復習できます。復習する日をまとめて、毎日にならないようにするためです。</p>` : ''}
       ${dueAll > due ? `<p class="hint">ほかの宮殿にも今日の復習が ${dueAll - due} 個あります。</p>` : ''}
       <div class="row-btns">
-        <button class="primary" data-action="review-due">今日の復習（${due}）</button>
+        <button class="primary" data-action="review-due" ${due + near ? '' : 'disabled'}>${due ? `今日の復習（${due + near}）` : `前倒しで復習（${near}）`}</button>
         <button data-action="review-all">最初から順に</button>
         <button data-action="review-weak">苦手・未復習だけ</button>
       </div>
       ${hintToggleHTML()}
-      <p class="hint">「覚えてた」が続くほど、次の復習までの間が 1日 → 3日 → 1週間 → 2週間 → 1か月 → 2か月 → 4か月 とのびます。忘れたら翌日からやり直しです。</p>
+      <p class="hint">「覚えてた」が続くほど、次の復習までの間が 1日 → 3日 → 1週間 → 2週間 → 1か月 → 2か月 → 4か月 とのびます（エビングハウスの忘却曲線）。忘れたら翌日からやり直しです。LINE の通知は、この復習日が来た日だけ届きます。</p>
       <p class="hint" style="margin-top:16px">キーボード：Enter＝答えを見る、1＝覚えてた、2＝忘れた</p>`;
   }
 
   if (review.idx >= review.queue.length) {
     const total = review.ok + review.ng;
     return `
-      <p class="progress">おつかれさま！${streakDays() > 1 ? `　🔥 ${streakDays()} 日連続！` : ''}</p>
+      <p class="progress">おつかれさま！${(() => { const nx = nextReview(); return nx.day ? `　次の復習は ${mdOf(nx.day)}` : ''; })()}</p>
       <div class="score">${review.ok} / ${total}</div>
       <p class="hint">${review.ng ? '忘れた場所は「苦手」に入ります。連想イメージをもっと大げさにすると覚えやすくなります。' : '全部覚えていました 🎉'}</p>
       <div class="row-btns">
@@ -1769,7 +1790,7 @@ async function pasteArt() {
 function startReview(kind) { // 'all' | 'weak' | 'due'
   let loci = cur().loci;
   if (kind === 'weak') loci = loci.filter((l) => l.stats?.lastOk !== true);
-  if (kind === 'due') loci = loci.filter(isDue);
+  if (kind === 'due') loci = loci.filter(inSession);
   if (!loci.length) {
     return toast({ weak: '苦手な場所はありません 🎉', due: '今日の復習はありません 🎉' }[kind] || 'まだ場所がありません');
   }

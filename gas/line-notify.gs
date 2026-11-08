@@ -12,7 +12,8 @@
  *
  * 毎日 12 時台（dailyNotify）：
  *   1. 同期データを Google ドライブにバックアップ（7日分）
- *   2. 今日の復習がある日だけ LINE に送る（問題＝景色のリンク、答えは下の方に）
+ *   2. 忘却曲線のポイントの日（ちょうど今日が復習日の場所がある日）だけ LINE に送る
+ *      （問題＝景色のリンク、答えは下の方に。2日以内に予定の場所もまとめる。遅れた場所は1週間後に1回だけ）
  */
 
 const TZ = 'Asia/Tokyo';
@@ -53,17 +54,28 @@ const MAX_ITEMS = 15; // LINE に載せる問題の最大数（多すぎると�
 // 同期データから、今日の復習の「問題（景色のリンク）」と「答え」を作って送る
 function notifyFromState_(st) {
   const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  const until = addDays_(today, EARLY_DAYS), weekAgo = addDays_(today, -7), threeAgo = addDays_(today, -2);
   const groups = [];
-  let total = 0;
+  let total = 0, point = false, reminder = false;
   (st.palaces || []).forEach(function (p) {
     const items = [];
-    (p.loci || []).forEach(function (l, i) { if (isDue_(l, today)) items.push({ n: i + 1, l: l }); });
+    (p.loci || []).forEach(function (l, i) {
+      const d = dueOf_(l, today);
+      const s = l.stats || {};
+      const retry = s.lastAt && !s.streak;  // 忘れた場所（やり直し中）
+      // 忘却曲線の「ポイントの日」。忘れた場所だけでは送らず、次のポイントの日に一緒に復習する
+      // （3日たってもポイントの日がなければ送る）
+      if (retry ? d === threeAgo : d === today) point = true;
+      if (d === weekAgo) reminder = true;   // 1週間遅れている（1回だけお知らせ）
+      if (d <= until) items.push({ n: i + 1, l: l }); // 2日以内に予定の場所もまとめる
+    });
     if (items.length) { groups.push({ name: p.name, items: items }); total += items.length; }
   });
-  if (!total) return; // 今日の復習がない日は送らない（無料の通数を節約）
+  // ポイントの日だけ送る（期限を過ぎた場所で毎日は送らない。1週間遅れたときだけ1回）
+  if (!total || !(point || reminder)) return;
+  const late = !point && reminder ? '1週間たった場所があります' : '';
 
-  const streak = streakDays_(st.history || {}, today);
-  const q = ['🧠 今日の復習：' + total + ' か所' + (streak ? '　🔥 ' + streak + ' 日連続中' : ''),
+  const q = ['🧠 今日は復習の日：' + total + ' か所' + (late ? '（' + late + '）' : ''),
     '景色を開いて、置いたものを思い出そう。'];
   const a = [];
   let shown = 0;
@@ -88,25 +100,18 @@ function notifyFromState_(st) {
   pushLine_(q.concat(spacer, a, tail).join('\n').slice(0, 4900)); // LINE の上限は 5000 文字
 }
 
-// アプリの streakDays() と同じ決まり：今日まだでも、昨日まで続いていれば数える
-function streakDays_(h, today) {
-  const total = function (d) { const x = h[d]; return x ? x[0] + x[1] : 0; };
-  const prev = function (d) {
-    const p = d.split('-').map(Number);
-    return Utilities.formatDate(new Date(Date.UTC(p[0], p[1] - 1, p[2] - 1, 3)), TZ, 'yyyy-MM-dd');
-  };
-  let d = today, n = 0;
-  if (!total(d)) d = prev(d);
-  while (total(d)) { n++; d = prev(d); }
-  return n;
-}
-
-// アプリの dueOf() と同じ決まり：予定日があればそれ、未復習は今日、古いデータは最後の復習の翌日
-function isDue_(l, today) {
+// アプリの dueOf() と同じ決まり：予定日があればそれ、未復習は置いた日、古いデータは最後の復習の翌日
+const EARLY_DAYS = 2; // アプリの EARLY_DAYS と同じ
+function dueOf_(l, today) {
   const s = l.stats || {};
-  if (s.due) return s.due <= today;
-  if (!s.lastAt) return true;
-  return Utilities.formatDate(new Date(s.lastAt), TZ, 'yyyy-MM-dd') < today;
+  if (s.due) return s.due;
+  const fmt = function (t) { return Utilities.formatDate(new Date(t), TZ, 'yyyy-MM-dd'); };
+  if (!s.lastAt) return l.createdAt ? fmt(l.createdAt) : today;
+  return addDays_(fmt(s.lastAt), 1);
+}
+function addDays_(d, n) {
+  const p = d.split('-').map(Number);
+  return Utilities.formatDate(new Date(Date.UTC(p[0], p[1] - 1, p[2] + n, 3)), TZ, 'yyyy-MM-dd');
 }
 function svUrl_(l) {
   const fov = Math.round(Math.max(10, Math.min(100, 180 / Math.pow(2, l.zoom == null ? 1 : l.zoom))));
