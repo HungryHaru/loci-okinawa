@@ -22,6 +22,13 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 ## git
 - このフォルダ専用のリポジトリ（ブランチ `main`）。ホームフォルダ `C:\Users\HARUKI` にも別の古い練習用リポジトリ（sample-chatbot）があるが無関係なので触らない。
 - バックアップ JSON（`loci-okinawa-*.json`）は `.gitignore` で除外。
+- リモート：https://github.com/HungryHaru/loci-okinawa （公開）。`main` に push すると GitHub Pages に反映される。
+- このPCでは git の SSL 証明書エラーが出るため、リポジトリ設定で `http.sslBackend=schannel` にしてある。
+
+## 公開先（GitHub Pages）
+- https://hungryharu.github.io/loci-okinawa/ （APIキーのウェブサイト制限に追加済み）
+- ネット上では server.py がないので、`openInChrome()` は localhost 以外ではすぐ `window.open`。
+- データ（IndexedDB）は PC の localhost 版とは別の保存場所になる。
 
 ## データ
 - `state = { palaces: [{ id, name, createdAt, loci: [...] }], currentId }` を IndexedDB `loci-okinawa` の `kv` ストア `state` キーに保存（`save()` で自動保存、旧 localStorage からは自動移行）。
@@ -51,6 +58,5 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - ブラウザでの動作確認は Claude からはできない（APIキーが必要）。ユーザーに確認してもらう。
 
 ## 今後のアイデア（未実装）
-- スマホ対応のためのホスティング（GitHub Pages / Cloudflare Pages。公開前にユーザーに確認）
 - PC とスマホのデータ同期
 - ズーム時の落書きのずれがあれば視野角の式を調整

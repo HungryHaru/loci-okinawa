@@ -290,18 +290,13 @@ python -m http.server 8000</pre>
 
   <section id="phone">
     <h2>10. スマホで使う</h2>
-    <p>画面はスマホにも対応しています。ただし、今のように PC の <code>localhost</code> で動かしている状態だと、<b>スマホからは開けません</b>。次のどちらかの方法が必要です。</p>
-    <h3>方法A：家の Wi-Fi で PC につなぐ（手軽）</h3>
+    <p>アプリはネット上にも置いてあるので、スマホからも開けます（PC の電源が切れていても使えます）。</p>
+    <p><a href="https://hungryharu.github.io/loci-okinawa/" target="_blank" rel="noopener"><code>https://hungryharu.github.io/loci-okinawa/</code></a></p>
     <ol class="steps">
-      <li>PC で <code>python -m http.server 8000</code> を起動します（Windows のファイアウォールの確認が出たら「プライベート」で許可）。</li>
-      <li>PC で <code>ipconfig</code> を実行し、IPv4 アドレス（例：<code>192.168.1.23</code>）を調べます。</li>
-      <li>API キーのウェブサイトの制限に <code>http://192.168.1.23:8000/*</code> を追加します。</li>
-      <li>スマホで <code>http://192.168.1.23:8000</code> を開きます。</li>
+      <li>スマホのブラウザで上のアドレスを開き、API キーを入力します（PC と同じキーで OK）。</li>
+      <li>ブラウザのメニューから<b>「ホーム画面に追加」</b>すると、アプリのように開けます。</li>
     </ol>
-    <p>PC が起動していて、同じ Wi-Fi につながっているときだけ使えます。また、https ではないので、一部の機能（クリップボードへのコピーなど）が制限されます。</p>
-    <h3>方法B：無料のホスティングに置く（どこでも使える）</h3>
-    <p>GitHub Pages や Cloudflare Pages などに置くと、https の URL ができて、外出先からでも使えます。ホーム画面に追加すれば、アプリのように開けます。API キーはアプリのファイルに書かれていない（各ブラウザで入力する）ので、ファイルを公開しても漏れません。ただし、キーの制限にそのサイトの URL を追加する必要があります。</p>
-
+    <p>API キーは、アプリのファイルには書かれていません（各ブラウザで入力する）。アドレスを知っている人がアプリを開いても、あなたのキーやデータは見えません。キーの「ウェブサイトの制限」には <code>https://hungryharu.github.io/loci-okinawa/*</code> を入れてあります。</p>
     <h3>スマホで使うときの注意点</h3>
     <div class="table-scroll"><table>
       <tr><th>注意点</th><th>内容・対策</th></tr>
