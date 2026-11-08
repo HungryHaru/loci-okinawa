@@ -1405,6 +1405,8 @@ async function claudeArt() {
 
 // アプリ用サーバー（server.py）に頼んで Chrome で開く。だめならこのブラウザで開く
 async function openInChrome(url) {
+  // ネット上（GitHub Pages など）では server.py がないので、すぐ開く（待つとポップアップを止められる）
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) return void window.open(url, '_blank', 'noopener');
   try {
     const res = await fetch('/open-chrome', {
       method: 'POST',
