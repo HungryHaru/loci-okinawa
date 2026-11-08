@@ -1,0 +1,8 @@
+# 書き出したバックアップ（自分のデータなので公開しない）
+loci-okinawa-*.json
+# Python のキャッシュ
+__pycache__/
+# エディタ・OS のファイル
+.vscode/
+Thumbs.db
+desktop.ini

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#e4572e"/>
+  <!-- 赤瓦の屋根 -->
+  <path d="M96 236 L256 132 L416 236 Z" fill="#fff"/>
+  <rect x="140" y="236" width="232" height="150" rx="10" fill="#fff" opacity=".92"/>
+  <!-- 位置ピン -->
+  <path d="M256 232c-30 0-54 24-54 54 0 40 54 92 54 92s54-52 54-92c0-30-24-54-54-54z" fill="#1b998b"/>
+  <circle cx="256" cy="286" r="20" fill="#fff"/>
+</svg>

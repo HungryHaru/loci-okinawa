@@ -1,0 +1,14 @@
+{
+  "name": "沖縄 記憶の宮殿",
+  "short_name": "記憶の宮殿",
+  "description": "ストリートビューで沖縄を歩きながら、場所法で覚える自分用アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#e4572e",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

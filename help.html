@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>使い方 - 沖縄 記憶の宮殿</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --accent: #e4572e; --accent2: #1b998b; --bg: #f7f5f0; --card: #fff;
+    --text: #222; --muted: #6b6b6b; --line: #e5e1d8; --note: #fff8e1; --warn: #fdecea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1a18; --card: #262522; --text: #ece9e3; --muted: #a8a49c; --line: #3a3833; --note: #3a3322; --warn: #3d2723; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); line-height: 1.8;
+    font-family: system-ui, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  }
+  header { background: var(--accent); color: #fff; padding: 28px 16px 24px; }
+  header .wrap { display: flex; align-items: center; gap: 16px; }
+  header img { width: 56px; height: 56px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  header h1 { margin: 0; font-size: 24px; }
+  header p { margin: 2px 0 0; opacity: .9; font-size: 14px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  main { padding: 16px; }
+  nav.toc { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; margin: 8px 0 20px; }
+  nav.toc ol { margin: 4px 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+  @media (max-width: 600px) { nav.toc ol { columns: 1; } }
+  nav.toc a { color: var(--text); }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 20px 16px; margin-bottom: 16px; }
+  h2 { font-size: 19px; border-bottom: 3px solid var(--accent); display: inline-block; padding-bottom: 2px; margin: 18px 0 10px; }
+  h3 { font-size: 16px; margin: 18px 0 6px; }
+  a { color: var(--accent2); }
+  code, kbd { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 90%; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 7px 8px; text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+  .note, .warn { border-radius: 8px; padding: 10px 14px; margin: 10px 0; font-size: 14px; }
+  .note { background: var(--note); }
+  .warn { background: var(--warn); }
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps li { counter-increment: s; position: relative; padding-left: 40px; margin: 10px 0; }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .back { display: inline-block; margin: 8px 0 24px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 8px 16px 32px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img src="icon.svg" alt="">
+    <div>
+      <h1>沖縄 記憶の宮殿 — 使い方</h1>
+      <p>ストリートビューで沖縄を歩きながら、場所法で覚えるための自分用アプリ</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <a class="back" href="index.html">← アプリに戻る</a>
+
+  <nav class="toc">
+    <b>目次</b>
+    <ol>
+      <li><a href="#about">このアプリについて</a></li>
+      <li><a href="#setup">はじめての準備</a></li>
+      <li><a href="#flow">基本の流れ</a></li>
+      <li><a href="#screen">画面の見方</a></li>
+      <li><a href="#ink">落書き・付箋・画像</a></li>
+      <li><a href="#ai">AI画像の作り方</a></li>
+      <li><a href="#review">復習のしかた</a></li>
+      <li><a href="#obsidian">Obsidian 連携</a></li>
+      <li><a href="#line">LINE で復習のお知らせ</a></li>
+      <li><a href="#data">データの保存</a></li>
+      <li><a href="#phone">スマホで使う</a></li>
+      <li><a href="#faq">困ったとき</a></li>
+      <li><a href="#tips">場所法のコツ</a></li>
+    </ol>
+  </nav>
+
+  <section id="about">
+    <h2>1. このアプリについて</h2>
+    <p><b>場所法（記憶の宮殿）</b>は、よく知っている道や建物の「場所」に、覚えたいものを順番に置いていく記憶術です。思い出すときは、頭の中でその道を歩き、置いたものを拾っていきます。</p>
+    <p>このアプリでは、Google ストリートビューを使うことで、<b>行ったことのない沖縄の場所でも「宮殿」にできます</b>。頭の中のイメージがぼやけてきたら、実際の景色を見て確かめられます。</p>
+    <ul>
+      <li><b>宮殿</b>：1つのテーマ用のルート（例：「英単語セット1」「首里城ルート」）</li>
+      <li><b>場所</b>：ルート上の地点。覚えたいものを1つずつ置く</li>
+    </ul>
+  </section>
+
+  <section id="setup">
+    <h2>2. はじめての準備</h2>
+    <h3>API キーを作る（初回だけ）</h3>
+    <ol class="steps">
+      <li><a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> でプロジェクトを作り、<b>請求先アカウントをリンク</b>します（リンクしないとストリートビューが白黒になります）。</li>
+      <li>「API とサービス」→「ライブラリ」で <b>Maps JavaScript API</b> と <b>Places API (New)</b> を有効にします。</li>
+      <li>「認証情報」→「API キー」を作り、制限をかけます。
+        <ul>
+          <li>ウェブサイトの制限：<code>http://localhost:8000/*</code>（スマホで使うときは、そのアドレスも追加）</li>
+          <li>API の制限：Maps JavaScript API と Places API (New)</li>
+        </ul>
+      </li>
+    </ol>
+    <div class="note">💰 <b>無料のまま使うために：</b>各 API の「割り当て」で <b>1日あたりの上限</b>を低めに設定しておきましょう（例：地図とストリートビュー 1日 100 回、検索 1日 50 回）。上限に達すると止まるだけで、料金はかかりません。「予算とアラート」で少額のアラートも設定しておくと安心です。</div>
+
+    <h3>起動する</h3>
+<pre>cd C:\Users\HARUKI\projects\loci-okinawa
+python -m http.server 8000</pre>
+    <p>ブラウザで <code>http://localhost:8000</code> を開き、API キーを入力します。</p>
+  </section>
+
+  <section id="flow">
+    <h2>3. 基本の流れ</h2>
+    <ol class="steps">
+      <li><b>宮殿を作る</b>：右上の <kbd>＋</kbd> で名前を付けて作ります。</li>
+      <li><b>場所を探す</b>：左上の検索、地図のクリック、ストリートビューの矢印で歩いて探します。シーサー、看板、ガジュマルなど<b>目立つ目印</b>を画面の真ん中に入れます。</li>
+      <li><b>覚えることを置く</b>：「覚えること」と「連想イメージ」を書き、必要なら落書きやAI画像を貼って、<b>「この場所に置く」</b>を押します。<b>押した瞬間に自動で保存</b>されます。</li>
+      <li><b>次の場所へ歩く</b>：道に沿って少し進み、2〜3 を繰り返します。</li>
+      <li><b>復習する</b>：「復習」タブで順番に巡り、思い出してから答え合わせをします。</li>
+    </ol>
+  </section>
+
+  <section id="screen">
+    <h2>4. 画面の見方</h2>
+    <div class="table-scroll"><table>
+      <tr><th>場所</th><th>できること</th></tr>
+      <tr><td>左上の検索ボックス</td><td>沖縄の中の場所を検索します（例：首里城、美ら海水族館）。<kbd>Enter</kbd> で検索し、カメラはその場所の方を向きます。</td></tr>
+      <tr><td>左下の地図</td><td>クリックするとその場所へ移動します。「拡大」で大きくできます。番号付きのピンと線が、今の宮殿のルートです。</td></tr>
+      <tr><td>右上のツールバー</td><td>落書き・付箋・画像（<a href="#ink">次の章</a>）</td></tr>
+      <tr><td>宮殿の選択欄</td><td>宮殿を切り替えます。（ ）の中は場所の数です。</td></tr>
+      <tr><td><kbd>＋</kbd></td><td>新しい宮殿を作る</td></tr>
+      <tr><td><kbd>🔗</kbd></td><td>Obsidian 連携（緑＝連携中、黄＝止まっている、灰＝未連携）</td></tr>
+      <tr><td><kbd>？</kbd></td><td>このページ</td></tr>
+      <tr><td><kbd>⋯</kbd></td><td>名前の変更・宮殿の削除・バックアップ・保存状況・APIキーの変更</td></tr>
+      <tr><td>作成タブ</td><td>場所を置く・編集する</td></tr>
+      <tr><td>復習タブ</td><td>ルートを順に巡って思い出す</td></tr>
+      <tr><td>一覧タブ</td><td>見る・編集・並べ替え（↑↓）・削除</td></tr>
+    </table></div>
+    <div class="note">沖縄の外へは移動できません。外に出ようとすると、元の場所に戻ります。</div>
+  </section>
+
+  <section id="ink">
+    <h2>5. 落書き・付箋・画像</h2>
+    <p>景色の上に直接書き込めます。書き込んだものは<b>景色の方角に貼り付く</b>ので、視点を回したりズームしたりしても、同じ場所にくっついたまま動きます。</p>
+    <div class="table-scroll"><table>
+      <tr><th>ボタン</th><th>動作</th></tr>
+      <tr><td>✋</td><td>視点を動かす（いつものストリートビュー）。描き終わったらここに戻します。</td></tr>
+      <tr><td>✏️</td><td>ペンで落書き</td></tr>
+      <tr><td>📝</td><td>クリックした所に付箋を貼る（文字を入力）</td></tr>
+      <tr><td>🖼</td><td>画像を貼る。クリックで標準の大きさ、ドラッグで大きさを指定。<kbd>Ctrl</kbd>+<kbd>V</kbd> やドラッグ&ドロップでも貼れます。</td></tr>
+      <tr><td>⤡</td><td>貼った画像の大きさ・位置を変える。画像をクリックで選び、<b>角の白い丸をドラッグで大きさ</b>、中をドラッグで移動。マウスのホイールでも大きさを変えられます。<kbd>Delete</kbd> でその画像を削除。画像のない所をクリックすると ✋ に戻ります。<br>画像を貼った直後は自動でこのモードになります。</td></tr>
+      <tr><td>色の丸</td><td>ペンと付箋の色</td></tr>
+      <tr><td>●</td><td>ペンの太さ（細・中・太）</td></tr>
+      <tr><td>↶ / 🗑</td><td>1つ戻す / この場所の書き込みを全部消す</td></tr>
+    </table></div>
+    <div class="note">
+      <ul style="margin:0;padding-left:20px">
+        <li>「この場所に置く」の<b>前に</b>描いたものは、置いたときに一緒に保存されます。</li>
+        <li>保存した後に書き足すときは、一覧タブの「編集」を開いてから描きます。この場合は<b>その場で自動保存</b>されます。</li>
+        <li>書き込みが見えるのは、保存したときと<b>同じ地点</b>にいるときだけです。1歩でも移動すると見えなくなります。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="ai">
+    <h2>6. AI画像の作り方</h2>
+    <ol class="steps">
+      <li>「連想イメージ」に場面を書きます。<br>例：<i>シーサーの口から巨大なりんごがゴロゴロ転がり出てくる</i></li>
+      <li><b>「🎨 Claudeで絵を作る」</b>を押します。指示文がコピーされ、<b>Chrome で Claude が開きます</b>。</li>
+      <li>Claude に貼り付けて送信すると、画面の横に<b>絵が表示</b>されます。直したい所があれば「りんごをもっと大きく」のように言葉で頼みます。</li>
+      <li>絵が決まったら、絵の右上の<b>「コピー」</b>を押します（中身は SVG コードですが、見なくて大丈夫です）。</li>
+      <li>アプリに戻って<b>「📋 コピーした絵を貼る」</b>を押し、景色の貼りたい所をクリックします（ドラッグで大きさ）。</li>
+    </ol>
+    <p>ほかの画像生成AI（Microsoft Copilot、ChatGPT、Gemini など）を使うときは、ヒント欄の「こちらの指示文」でコピーした文を貼って画像を作り、できた画像を景色の上で <kbd>Ctrl</kbd>+<kbd>V</kbd>、または保存したファイルを景色にドラッグします。</p>
+    <div class="note">白い背景は自動で透明になり、ステッカーのようになります（四隅とつながった白い部分だけが消えるので、絵の中の白は残ります）。画像は小さく縮小して保存するので、たくさん貼っても大丈夫です。</div>
+  </section>
+
+  <section id="review">
+    <h2>7. 復習のしかた</h2>
+    <ul>
+      <li><b>今日の復習</b>：今日が復習日の場所だけを巡ります。ふだんはこれを使います。</li>
+      <li><b>最初から順に</b>：ルートの1番から順に巡ります。</li>
+      <li><b>苦手・未復習だけ</b>：前回「忘れた」場所と、まだ一度も復習していない場所だけを巡ります。</li>
+    </ul>
+    <p>答えを見る前に、<b>景色の中に置いたイメージを頭の中ではっきり思い浮かべてから</b>「答えを見る」を押しましょう。押すと、答えと一緒に落書き・付箋・画像が景色の上に現れます。</p>
+    <p>キーボード：<kbd>Enter</kbd> 答えを見る ／ <kbd>1</kbd> 覚えてた ／ <kbd>2</kbd> 忘れた</p>
+    <h3>復習日の決まり方（忘却曲線）</h3>
+    <p>「覚えてた」が続くほど、次の復習までの間がのびます：<b>1日 → 3日 → 1週間 → 2週間 → 1か月 → 2か月 → 4か月</b>。「忘れた」を押すと、翌日からやり直しです。</p>
+    <ul>
+      <li>置いたばかりで、まだ復習していない場所は「今日」が復習日です。</li>
+      <li>復習日より前に復習して「覚えてた」でも、間はのびません（同じ日に何回やっても進みません）。</li>
+      <li>復習日を過ぎた場所は、復習するまで毎日「今日の復習」に残ります。</li>
+    </ul>
+  </section>
+
+  <section id="obsidian">
+    <h2>8. Obsidian 連携</h2>
+    <p>PC の <b>Chrome</b> で使います（デスクトップのアイコンから開くと Chrome で開きます）。</p>
+    <ol class="steps">
+      <li><kbd>🔗</kbd> を押し、<code>OneDrive\ドキュメント\Obsidian Vault</code> を選んで、書き込みを許可します。</li>
+      <li>この後は、場所を置く・編集する・復習するたびに、<b>約1.5秒後に自動で Vault に保存</b>されます。</li>
+      <li>アプリを開き直すと、最初にどこかをクリックしたときに書き込みの確認が出ます。<b>「毎回のアクセスで許可する」</b>を選ぶと、次からは確認なしでつながったままになります（「今回のみ許可」だと開くたびに確認が出ます）。</li>
+    </ol>
+<pre>Obsidian Vault/
+└─ 記憶の宮殿/
+   ├─ 首里城ルート.md   … 宮殿ごとに1つのノート
+   ├─ 画像/            … 貼った画像
+   └─ _data.json       … アプリのデータ全体（復元用）</pre>
+    <p>ノートには、覚えたこと、連想イメージ、付箋の文字、画像、<b>「ストリートビューで開く」リンク</b>（同じ地点・同じ向きで開きます）、正解・不正解の回数が書かれます。</p>
+    <p>Obsidian のコミュニティプラグイン <b>Spaced Repetition</b> を入れると、ノートの <code>質問::答え</code> の行がそのまま復習カードになります。</p>
+    <div class="warn">⚠ <b>アプリ → Obsidian の一方通行</b>です。Obsidian で「記憶の宮殿」フォルダのノートを書き換えても、次の保存でアプリの内容に上書きされます。メモを足したいときは、別のノートを作ってリンクしてください。</div>
+  </section>
+
+  <section id="line">
+    <h2>8-2. LINE で復習のお知らせ</h2>
+    <p>毎日 <b>12 時ごろ</b>、今日の復習がある日だけ LINE にお知らせが届きます（PC の電源が切れていても届きます）。</p>
+    <p>しくみ：アプリが「宮殿の名前」と「日付ごとの場所の数」だけを、自分の Google Apps Script（Google の無料のしくみ）に送ります。毎日 12 時に Apps Script が LINE に送ります。<b>覚えた内容や景色は外に送りません。</b></p>
+    <p>ぜんぶ無料です（LINE は月 200 通まで無料。1日1通なので収まります）。</p>
+
+    <h3>① LINE の準備（自分専用の公式アカウントを作る）</h3>
+    <ol class="steps">
+      <li><a href="https://entry.line.biz/start/jp/" target="_blank" rel="noopener">LINE 公式アカウントの作成ページ</a>で、自分の LINE でログインして、アカウントを作ります（名前は「記憶の宮殿」など。業種などは適当でOK）。</li>
+      <li><a href="https://manager.line.biz/" target="_blank" rel="noopener">LINE Official Account Manager</a> で作ったアカウントを開き、右上の「設定」→「Messaging API」→「Messaging API を利用する」を押します（プロバイダー名は自分の名前などでOK）。</li>
+      <li>同じ画面の「応答設定」で「応答メッセージ」をオフにしておくと、話しかけても自動返信が来なくなります（なくてもOK）。</li>
+      <li><a href="https://developers.line.biz/console/" target="_blank" rel="noopener">LINE Developers コンソール</a>を開き、プロバイダー → 作ったチャネルを選びます。
+        <ul>
+          <li>「チャネル基本設定」の一番下にある<b>「あなたのユーザーID」</b>（U から始まる）を控えます。</li>
+          <li>「Messaging API 設定」の <b>QR コード</b>をスマホで読んで、友だちに追加します。</li>
+          <li>同じページの一番下の<b>「チャネルアクセストークン（長期）」</b>で「発行」を押し、出てきた長い文字を控えます。</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>② Google Apps Script の準備</h3>
+    <ol class="steps">
+      <li><a href="https://script.google.com/" target="_blank" rel="noopener">Google Apps Script</a> を開き、「新しいプロジェクト」を押します。左上の名前を「記憶の宮殿 LINE 通知」などに変えます。</li>
+      <li>最初からある文字を全部消して、アプリのフォルダの <code>gas\line-notify.gs</code> の中身をまるごと貼り付け、保存（💾）します。</li>
+      <li>左の ⚙「プロジェクトの設定」→ 一番下の「スクリプト プロパティを追加」で、次の3つを入れて保存します。
+        <ul>
+          <li><code>LINE_TOKEN</code>：①で控えたチャネルアクセストークン</li>
+          <li><code>LINE_USER_ID</code>：①で控えたユーザーID</li>
+          <li><code>SECRET</code>：自分で決めた合言葉（英数字 20 文字くらい。例：<code>okinawa7x9k2m4p8q1z5w3</code> のような適当な文字）</li>
+        </ul>
+      </li>
+      <li>左の「&lt;&gt; エディタ」に戻り、上の関数の選択を <b>setup</b> にして「▶ 実行」を押します。
+        <ul><li>「承認が必要です」と出たら、自分のアカウントを選び、「詳細」→「（安全ではないページ）に移動」→「許可」と進みます（自分で作ったスクリプトなので大丈夫です）。</li></ul>
+      </li>
+      <li>右上の「デプロイ」→「新しいデプロイ」→ 歯車で「<b>ウェブアプリ</b>」を選びます。
+        <ul>
+          <li>次のユーザーとして実行：<b>自分</b></li>
+          <li>アクセスできるユーザー：<b>全員</b>（合言葉がないと受け付けないので大丈夫です）</li>
+        </ul>
+        「デプロイ」を押して、出てきた<b>ウェブアプリの URL</b>（…/exec で終わる）をコピーします。</li>
+    </ol>
+
+    <h3>③ アプリにつなぐ</h3>
+    <ol class="steps">
+      <li>アプリの「⋯」→「<b>LINE 通知の設定</b>」を押します。</li>
+      <li>コピーした URL の最後に <code>?key=合言葉</code> を付けて貼り、OK を押します。<br>
+        例：<code>https://script.google.com/macros/s/AKfy…/exec?key=okinawa7x9k2m4p8q1z5w3</code></li>
+      <li>LINE に<b>「テスト：…通知が届きました」</b>と届けば完了です。</li>
+    </ol>
+    <p>この後は、復習したり場所を置いたりするたびに、新しい予定が自動で送られます。</p>
+    <div class="note">💡 予定が送られるのはアプリを使ったときだけです。しばらくアプリを開かなくても、送られた予定で毎日お知らせは届きます（復習日を過ぎた場所も数に入ります）。</div>
+  </section>
+
+  <section id="data">
+    <h2>9. データの保存</h2>
+    <ul>
+      <li><b>保存ボタンはありません。</b>置く・編集する・並べ替える・復習する・描くたびに、自動で保存されます。</li>
+      <li>データは、ブラウザの中の大容量の保存領域（IndexedDB）に保存しています。<b>数百〜数千か所、画像も数百枚</b>くらいなら問題ありません。</li>
+      <li>アプリは、ブラウザに「容量不足になっても消さないで」とお願いしています。お願いが通ったかどうかは「⋯ → 保存状況を見る」で確認できます。</li>
+      <li>データは<b>ブラウザごと・端末ごと</b>に別々です。別のブラウザや、PC とスマホの間では共有されません。</li>
+    </ul>
+    <h3>バックアップ</h3>
+    <ul>
+      <li><b>Obsidian 連携をしていれば、自動でバックアップ</b>されます（Vault は OneDrive の中にあるので、クラウドにも残ります）。</li>
+      <li>手動でバックアップするときは「⋯ → バックアップを保存」を使います。画像も含めて1つの JSON ファイルになります。</li>
+      <li>復元するときは「⋯ → バックアップを読み込む」で、バックアップの JSON か、Vault の <code>_data.json</code> を選びます（<code>_data.json</code> には画像が含まれませんが、画像は Vault の「画像」フォルダに残っています）。</li>
+    </ul>
+    <div class="warn">⚠ ブラウザの「閲覧データを削除」で「Cookie とサイトデータ」を消すと、アプリのデータも消えます。</div>
+  </section>
+
+  <section id="phone">
+    <h2>10. スマホで使う</h2>
+    <p>画面はスマホにも対応しています。ただし、今のように PC の <code>localhost</code> で動かしている状態だと、<b>スマホからは開けません</b>。次のどちらかの方法が必要です。</p>
+    <h3>方法A：家の Wi-Fi で PC につなぐ（手軽）</h3>
+    <ol class="steps">
+      <li>PC で <code>python -m http.server 8000</code> を起動します（Windows のファイアウォールの確認が出たら「プライベート」で許可）。</li>
+      <li>PC で <code>ipconfig</code> を実行し、IPv4 アドレス（例：<code>192.168.1.23</code>）を調べます。</li>
+      <li>API キーのウェブサイトの制限に <code>http://192.168.1.23:8000/*</code> を追加します。</li>
+      <li>スマホで <code>http://192.168.1.23:8000</code> を開きます。</li>
+    </ol>
+    <p>PC が起動していて、同じ Wi-Fi につながっているときだけ使えます。また、https ではないので、一部の機能（クリップボードへのコピーなど）が制限されます。</p>
+    <h3>方法B：無料のホスティングに置く（どこでも使える）</h3>
+    <p>GitHub Pages や Cloudflare Pages などに置くと、https の URL ができて、外出先からでも使えます。ホーム画面に追加すれば、アプリのように開けます。API キーはアプリのファイルに書かれていない（各ブラウザで入力する）ので、ファイルを公開しても漏れません。ただし、キーの制限にそのサイトの URL を追加する必要があります。</p>
+
+    <h3>スマホで使うときの注意点</h3>
+    <div class="table-scroll"><table>
+      <tr><th>注意点</th><th>内容・対策</th></tr>
+      <tr><td>データが PC と別</td><td>スマホのデータは PC と自動では同期されません。PC で「バックアップを保存」した JSON を OneDrive 経由でスマホに送り、「バックアップを読み込む」で移します（中身は置き換わります）。</td></tr>
+      <tr><td>Obsidian 連携ができない</td><td>スマホのブラウザは、フォルダへの書き込みに対応していません。Obsidian 連携は PC で行ってください。</td></tr>
+      <tr><td>iPhone はデータが消えることがある</td><td>Safari では、しばらく開かないサイトのデータが消されることがあります。<b>「ホーム画面に追加」して、そこから開く</b>と消されにくくなります。こまめにバックアップしてください。</td></tr>
+      <tr><td>モバイルデータ通信を多く使う</td><td>ストリートビューの画像は容量が大きいので、できるだけ Wi-Fi で使いましょう。</td></tr>
+      <tr><td>無料枠を早く使う</td><td>PC と同じキーを使うと、回数は合算されます。歩くたびに読み込みが発生するので、1日の上限を設定しておきましょう。</td></tr>
+      <tr><td>画像の貼り方</td><td>スマホでは Ctrl+V やドラッグができないので、<b>🖼 から写真やファイルを選んで</b>貼ります。</td></tr>
+      <tr><td>描くときの操作</td><td>✏️ を選んでいる間は、指でなぞると線になり、視点は動きません。視点を動かすときは ✋ に戻します。</td></tr>
+      <tr><td>画面が狭い</td><td>上がストリートビュー、下が操作パネルになります。地図は「拡大」で大きくできます。横向きにすると景色を広く見られます。</td></tr>
+    </table></div>
+  </section>
+
+  <section id="faq">
+    <h2>11. 困ったとき</h2>
+    <h3>ストリートビューが白黒・暗い</h3>
+    <p>Google 側の設定の問題です。請求先アカウントのリンク、API の有効化、キーの制限を確認してください。ブラウザで <kbd>F12</kbd> → Console を開くと、エラー名（<code>BillingNotEnabledMapError</code> など）が出ています。</p>
+    <h3>検索できない</h3>
+    <p><b>Places API (New)</b> が有効か、キーの API の制限に入っているかを確認してください。</p>
+    <h3>保存した場所の景色が少し違う</h3>
+    <p>Google がストリートビューの写真を新しくすると、保存した写真が使えなくなることがあります。その場合は、近くの新しい写真に自動で切り替わります。向きや落書きの位置がずれたら、一覧の「編集」→「位置を今の画面に変更」で直してください。</p>
+    <h3>落書きが見えない</h3>
+    <p>保存したときと同じ地点にいるか確認してください。一覧の「見る」で、その地点に戻れます。復習中は「答えを見る」を押すまで表示されません。</p>
+    <h3>LINE にテスト通知が届かない</h3>
+    <ul>
+      <li>まず Apps Script のエディタで関数 <b>testLine</b> を選んで「▶ 実行」してみてください。届けば LINE 側は OK で、アプリ → Apps Script のつなぎ方の問題です。届かなければ、下の「実行ログ」に原因が出ます。</li>
+      <li>LINE で、作った公式アカウントを<b>友だちに追加</b>しているか確認してください。</li>
+      <li>URL の最後の <code>?key=</code> の後ろが、スクリプト プロパティの <code>SECRET</code> とまったく同じか確認してください。</li>
+      <li>Apps Script の左の「実行数」でエラーが出ていないか見てください。「LINE への送信に失敗：401」ならトークンの貼り間違い、「400」ならユーザーIDの貼り間違いです。</li>
+      <li>Apps Script のコードを書き換えたときは、「デプロイ」→「デプロイを管理」→ 鉛筆 →「バージョン：新バージョン」→「デプロイ」をしないと反映されません。</li>
+    </ul>
+    <h3>🔗 が黄色のまま</h3>
+    <p>1回押して、書き込みを「許可」してください。それでも直らないときは「⋯ → Obsidian 連携を解除」してから、もう一度 🔗 で Vault を選び直してください。</p>
+  </section>
+
+  <section id="tips">
+    <h2>12. 場所法のコツ</h2>
+    <ul>
+      <li><b>イメージは大げさに、変に、動きをつけて。</b>「りんごが置いてある」より「シーサーがりんごを吐き出して、通行人に当たっている」の方が覚えやすくなります。</li>
+      <li><b>目印のはっきりした場所を選ぶ。</b>似たような道が続く場所より、角の店、鳥居、大きな木など、見分けやすい場所が向いています。</li>
+      <li><b>1つの場所に1つ。</b>詰め込みすぎると混ざります。</li>
+      <li><b>一方向に歩く。</b>行ったり来たりせず、道に沿って進むと順番を思い出しやすくなります。</li>
+      <li><b>1つの宮殿は10〜20か所くらい。</b>多くなったら、宮殿を分けましょう（例：「国際通り」「首里」「北谷」）。</li>
+      <li><b>忘れかけたころに復習する。</b>覚えた当日、翌日、3日後、1週間後……と、間隔を広げていくと長く残ります。</li>
+      <li><b>ときどき目を閉じて歩く。</b>アプリを見ずに頭の中だけでルートを歩けるか試すと、本当の力がつきます。</li>
+    </ul>
+  </section>
+
+  <a class="back" href="index.html">← アプリに戻る</a>
+</main>
+<footer>沖縄 記憶の宮殿 — 自分用アプリ</footer>
+</body>
+</html>
