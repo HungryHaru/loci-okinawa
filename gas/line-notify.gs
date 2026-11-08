@@ -74,8 +74,9 @@ function notifyFromState_(st) {
     a.push('', '【' + g.name + '】');
     items.forEach(function (x) {
       const h = hintOf_(x.l);
-      q.push('#' + x.n + (h ? ' 🇯🇵「' + h + '」を英語で' : '') + '\n' + svUrl_(x.l));
-      a.push('#' + x.n + ' ' + oneLine_(x.l.item));
+      const nm = x.l.name ? ' 📍' + oneLine_(x.l.name) : '';
+      q.push('', '#' + x.n + nm + (h ? '\n🇯🇵「' + h + '」を英語で' : '') + '\n' + svUrl_(x.l));
+      a.push('#' + x.n + nm + ' → ' + oneLine_(x.l.item));
     });
   });
   if (shown < total) q.push('', '（ほか ' + (total - shown) + ' か所はアプリで）');

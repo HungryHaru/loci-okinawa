@@ -511,7 +511,7 @@ function renderMarkers() {
     const m = new google.maps.Marker({
       position: { lat: l.lat, lng: l.lng }, map,
       label: { text: String(i + 1), color: '#fff', fontSize: '12px', fontWeight: '700' },
-      title: '#' + (i + 1),
+      title: '#' + (i + 1) + (l.name ? ' ' + l.name : ''),
     });
     m.addListener('click', () => {
       if (review && review.idx < review.queue.length) return;
@@ -537,7 +537,7 @@ let tool = 'move';
 let inkColor = '#ff3b30';
 let penWidth = 6;
 let draft = { panoId: null, items: [], view: null }; // まだ「置く」前の落書き（IndexedDB にも保存）
-let draftText = { item: '', image: '', question: '' }; // まだ「置く」前の入力中の文字
+let draftText = { name: '', item: '', image: '', question: '' }; // まだ「置く」前の入力中の文字
 let draftTimer = 0;
 
 function saveDraftNow() {
@@ -554,7 +554,7 @@ async function loadDraft() {
     const d = await kv.get('draft');
     if (!d) return;
     draft = { panoId: d.panoId ?? null, items: d.items || [], view: d.view || null };
-    draftText = { item: d.text?.item || '', image: d.text?.image || '', question: d.text?.question || '' };
+    draftText = { name: d.text?.name || '', item: d.text?.item || '', image: d.text?.image || '', question: d.text?.question || '' };
   } catch (e) { console.error(e); }
 }
 window.addEventListener('pagehide', () => { if (draftTimer) saveDraftNow(); });
@@ -1177,6 +1177,7 @@ function palaceMarkdown(p, imgExt) {
   p.loci.forEach((l, i) => {
     const ink = l.ink || [];
     out.push(`## ${i + 1}. ${oneLine(l.item)}`, '');
+    if (l.name) out.push(`- 🏷 目印：${oneLine(l.name)}`);
     if (l.image) out.push(`- 💭 ${oneLine(l.image)}`);
     const notes = ink.filter((x) => x.type === 'note').map((x) => oneLine(x.text));
     if (notes.length) out.push(`- 📝 ${notes.join(' ／ ')}`);
@@ -1185,7 +1186,7 @@ function palaceMarkdown(p, imgExt) {
     const imgs = ink.filter((x) => x.type === 'image' && imgExt[x.img]);
     if (imgs.length) out.push('', imgs.map((x) => `![[${VAULT_FOLDER}/${IMG_FOLDER}/${x.img}.${imgExt[x.img]}|200]]`).join(' '));
     // Spaced Repetition プラグイン用のカード（質問::答え）
-    out.push('', `${p.name} の ${i + 1} 番目の場所に置いたものは？::${oneLine(l.item)}`);
+    out.push('', `${p.name} の ${i + 1} 番目の場所${l.name ? `（${oneLine(l.name)}）` : ''}に置いたものは？::${oneLine(l.item)}`);
     const hint = hintOf(l);
     if (hint) out.push(`「${oneLine(hint)}」を英語で::${oneLine(l.item)}`);
     out.push('');
@@ -1356,6 +1357,9 @@ function buildHTML() {
     <b>向き・ズームもそのまま保存</b>されるので、覚えたいものを置く「目印」（シーサー、看板、ガジュマルなど）を画面の中心にしてから置くのがおすすめです。<br>
     右上の ✏️ で景色に落書き、📝 で付箋を貼れます（✋ で視点操作に戻る）。復習では「答えを見る」まで隠れます。</p>
     ${ed ? `<span class="badge">#${numOf(ed)} を編集中</span>` : ''}
+    <label>目印の名前（なくてもよい）
+      <input id="nameInput" type="text" placeholder="例：赤いポスト、知念商店、公園のベンチ" value="${esc(ed ? ed.name || '' : draftText.name)}">
+    </label>
     <label>覚えること
       <textarea id="itemInput" rows="2" placeholder="例：apple = りんご">${esc(ed ? ed.item : draftText.item)}</textarea>
     </label>
@@ -1436,7 +1440,7 @@ function reviewHTML() {
   const l = findLocus(review.queue[review.idx]);
   const hint = showHint() ? hintOf(l) : '';
   return `
-    <p class="progress">${review.idx + 1} / ${review.queue.length}　（場所 #${numOf(l)}）</p>
+    <p class="progress">${review.idx + 1} / ${review.queue.length}　（場所 #${numOf(l)}${l.name ? ` ${esc(l.name)}` : ''}）</p>
     <p class="question">この場所に何を置いた？</p>
     ${hint ? `<p class="hint-ja">🇯🇵 「${esc(hint)}」<small>を英語で言うと？（声に出してから答えを見よう）</small></p>` : ''}
     ${review.revealed
@@ -1461,6 +1465,7 @@ function listHTML() {
       <div class="row">
         <span class="num">${i + 1}</span>
         <div class="txt">
+          ${l.name ? `<small class="landmark">📍 ${esc(l.name)}</small>` : ''}
           <b>${esc(l.item)}</b>
           ${l.image ? `<small>💭 ${esc(l.image)}</small>` : ''}
           <small>✓ ${l.stats?.ok ?? 0}　✗ ${l.stats?.ng ?? 0}${l.ink?.length ? `　✏️ ${l.ink.length}` : ''}</small>
@@ -1483,17 +1488,19 @@ function addLocus() {
   const item = $('#itemInput').value.trim();
   const image = $('#imageInput').value.trim();
   const question = $('#questionInput').value.trim();
+  const name = $('#nameInput').value.trim();
   if (!item) return toast('「覚えること」を入力してください');
   if (!pano || !pano.getPano()) return toast('ストリートビューが表示されていません');
   if (!inOkinawa(pano.getPosition())) return toast('沖縄の中の場所を選んでください');
   const view = currentView();
   const ink = draft.panoId === view.panoId ? draft.items : [];
   draft = { panoId: null, items: [], view: null };
-  draftText = { item: '', image: '', question: '' };
+  draftText = { name: '', item: '', image: '', question: '' };
   saveDraftNow();
   cur().loci.push({
     id: uid(), ...view, item, image, ink,
     ...(question ? { question } : {}),
+    ...(name ? { name } : {}),
     stats: { ok: 0, ng: 0, lastOk: null, lastAt: null }, createdAt: Date.now(),
   });
   save();
@@ -1515,6 +1522,8 @@ function updateLocus(moveHere) {
     l.image = $('#imageInput').value.trim();
     const question = $('#questionInput').value.trim();
     if (question) l.question = question; else delete l.question;
+    const name = $('#nameInput').value.trim();
+    if (name) l.name = name; else delete l.name;
     editingId = null;
     toast('更新しました');
   }
@@ -1825,6 +1834,7 @@ $('#content').addEventListener('input', (e) => {
   if (e.target.id === 'itemInput') draftText.item = e.target.value;
   else if (e.target.id === 'imageInput') draftText.image = e.target.value;
   else if (e.target.id === 'questionInput') draftText.question = e.target.value;
+  else if (e.target.id === 'nameInput') draftText.name = e.target.value;
   else return;
   saveDraftSoon();
 });

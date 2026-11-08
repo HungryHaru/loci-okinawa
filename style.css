@@ -112,6 +112,7 @@ a.btn {
 
 .progress { font-size: 13px; color: var(--muted); }
 .question { font-size: 18px; font-weight: 700; margin: 10px 0 14px; }
+.loci .landmark { color: var(--accent2, #1b998b); font-weight: 600; }
 .hint-ja { font-size: 18px; font-weight: 700; margin: -6px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--hint-bg, rgba(27, 153, 139, .12)); }
 .hint-ja small { display: block; font-size: 12px; font-weight: 400; opacity: .75; margin-top: 2px; }
 #content label.check { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-top: 12px; cursor: pointer; }
