@@ -35,6 +35,11 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
 
+    def end_headers(self):
+        # Always check for new files (so design/code updates show up right away)
+        self.send_header('Cache-Control', 'no-cache')
+        super().end_headers()
+
     def do_POST(self):
         if self.path != '/open-chrome':
             return self.send_error(404)
