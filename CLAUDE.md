@@ -12,6 +12,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 
 ## 構成（ビルドなし・素の HTML/CSS/JS）
 - `index.html` / `style.css` / `app.js` … アプリ本体（app.js 1ファイル）
+  - 色は style.css の `:root` のトークンだけで決める（ライト／`prefers-color-scheme: dark`／`[data-theme="dark"]` の3か所を同じ名前で）。画面の色は localStorage `loci-okinawa-theme`（なし＝自動・light・dark）、index.html の head で先に当てる。記録タブのグラフ色も `var(--heat-*)` / `var(--lv-*)`
 - `help.html` … 使い方ページ（機能を変えたらここも更新する）
 - `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く。Origin チェックあり）。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
 - `start-app.ps1` … デスクトップショートカット用ランチャー（server.py を 127.0.0.1:8000 で起動 → Chrome `--app` で開く。ブラウザは Chrome に統一）。PS 5.1 が読むので **ASCII のみ**で書くこと
@@ -20,6 +21,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
   - `isDue_()` はアプリの `dueOf()` と同じ決まりにすること（片方を変えたら両方直す）
   - 同期：`doPost` の `action`（meta / pull / images / putImages / push / backups / restore）。push では画像を消さない（片付けは毎日のバックアップ時）。Drive の「沖縄 記憶の宮殿（同期データ）」に state.json と images/<id>。版番号 `SYNC_REV` で古い版からの上書きを断る（衝突はアプリ側で本人に選ばせる）
   - コードを変えたらユーザーに「デプロイを管理 → 新バージョン」をしてもらう（URL を変えないため）
+- iPhone のホーム画面アプリは**消すとデータも消える**。アイコンの入れ直しを案内するときは、先にクラウド同期が済んでいるか確認してもらう
 - `icon.svg`（PWA/ファビコン）, `apple-touch-icon.png`（iPhone のホーム画面。角を丸めない・透明なしの正方形。icon-180.png に藍の地を敷いたもの）, `icon-180.png`, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
   - アイコンは琉球藍 #1f3b6e の地に朱の首里城 正殿（2026-11-11）。PNG と ico は icon.svg から書き出したもの。描き直すときは全サイズをそろえ、index.html・help.html・manifest.json のアイコン URL の `?v=2` を 1 つ上げる（キャッシュ対策）。デスクトップのショートカットは OneDrive\画像\loci-okinawa-icon.ico を参照しているので、そちらにもコピーする
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
