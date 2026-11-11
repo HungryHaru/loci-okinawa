@@ -20,8 +20,8 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
   - `isDue_()` はアプリの `dueOf()` と同じ決まりにすること（片方を変えたら両方直す）
   - 同期：`doPost` の `action`（meta / pull / images / putImages / push / backups / restore）。push では画像を消さない（片付けは毎日のバックアップ時）。Drive の「沖縄 記憶の宮殿（同期データ）」に state.json と images/<id>。版番号 `SYNC_REV` で古い版からの上書きを断る（衝突はアプリ側で本人に選ばせる）
   - コードを変えたらユーザーに「デプロイを管理 → 新バージョン」をしてもらう（URL を変えないため）
-- `icon.svg`（PWA/ファビコン）, `icon-180.png`（iPhone のホーム画面）, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
-  - アイコンは琉球藍 #1f3b6e の地に朱の首里城 正殿（2026-11-11）。PNG と ico は icon.svg から書き出したもの。描き直すときは全サイズをそろえる
+- `icon.svg`（PWA/ファビコン）, `apple-touch-icon.png`（iPhone のホーム画面。角を丸めない・透明なしの正方形。icon-180.png に藍の地を敷いたもの）, `icon-180.png`, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
+  - アイコンは琉球藍 #1f3b6e の地に朱の首里城 正殿（2026-11-11）。PNG と ico は icon.svg から書き出したもの。描き直すときは全サイズをそろえ、index.html・help.html・manifest.json のアイコン URL の `?v=2` を 1 つ上げる（キャッシュ対策）。デスクトップのショートカットは OneDrive\画像\loci-okinawa-icon.ico を参照しているので、そちらにもコピーする
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
 
 ## git
