@@ -13,6 +13,8 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 ## 構成（ビルドなし・素の HTML/CSS/JS）
 - `index.html` / `style.css` / `app.js` … アプリ本体（app.js 1ファイル）
   - 色は style.css の `:root` のトークンだけで決める（ライト／`prefers-color-scheme: dark`／`[data-theme="dark"]` の3か所を同じ名前で）。画面の色は localStorage `loci-okinawa-theme`（なし＝自動・light・dark）、index.html の head で先に当てる。記録タブのグラフ色も `var(--heat-*)` / `var(--lv-*)`
+  - 見た目は「琉球デザイン」（2026-11-11）：琉球藍の地＋紅型（びんがた）風の花模様のヘッダー、ミンサー織（五つと四つ）の帯、朱印風の番号、藍染めの濃淡の復習カレンダー。文字は Google Fonts の Zen Antique Soft（見出し・数字）と Zen Maru Gothic（本文）。模様は style.css に SVG の data URI で直接入っている（`__BINGATA__` などの置き換えで作った。描き直すときは同じ色を使う）
+  - 復習の終わりの言葉：全問正解「上等！」、半分以上「ちばりよー！」、それ未満「なんくるないさ」
 - `help.html` … 使い方ページ（機能を変えたらここも更新する）
 - `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く。Origin チェックあり）。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
 - `start-app.ps1` … デスクトップショートカット用ランチャー（server.py を 127.0.0.1:8000 で起動 → Chrome `--app` で開く。ブラウザは Chrome に統一）。PS 5.1 が読むので **ASCII のみ**で書くこと

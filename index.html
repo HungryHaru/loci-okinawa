@@ -14,7 +14,10 @@
 <link rel="manifest" href="manifest.json?v=3">
 <link rel="icon" href="icon.svg?v=2" type="image/svg+xml">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique+Soft&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -65,11 +68,17 @@
 
   <aside id="panel">
     <header>
+      <div class="brand">
+        <span class="brand-logo" aria-hidden="true"></span>
+        <div class="brand-name">記憶の宮殿<small>OKINAWA LOCI</small></div>
+        <div class="hdr-btns">
+          <button id="newPalaceBtn" title="新しい宮殿を作る">＋</button>
+          <button id="vaultBtn" title="Obsidian と連携する（Vault フォルダを選ぶ）">🔗</button>
+          <a id="helpBtn" class="btn" href="help.html" target="_blank" title="使い方">？</a>
+          <button id="menuBtn" title="メニュー">⋯</button>
+        </div>
+      </div>
       <select id="palaceSelect" title="宮殿（ルート）を選ぶ"></select>
-      <button id="newPalaceBtn" title="新しい宮殿を作る">＋</button>
-      <button id="vaultBtn" title="Obsidian と連携する（Vault フォルダを選ぶ）">🔗</button>
-      <a id="helpBtn" class="btn" href="help.html" target="_blank" title="使い方">？</a>
-      <button id="menuBtn" title="メニュー">⋯</button>
       <div id="menu" class="hidden">
         <button data-menu="theme" id="themeMenuBtn">画面の色：自動</button>
         <div class="menu-sep"></div>
@@ -85,17 +94,18 @@
       </div>
       <input id="importFile" type="file" accept="application/json,.json" class="hidden">
     </header>
+    <div class="minsa" aria-hidden="true"></div>
     <nav class="tabs">
-      <button data-mode="build" class="active">作成</button>
-      <button data-mode="review">復習</button>
-      <button data-mode="list">一覧</button>
-      <button data-mode="stats">記録</button>
+      <button data-mode="build" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.4"/></svg>作成</button>
+      <button data-mode="review"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M17.8 3.5v3.7h-3.7M6.2 20.5v-3.7h3.7"/></svg>復習</button>
+      <button data-mode="list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="17.5" r="1.2"/></svg>一覧</button>
+      <button data-mode="stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>記録</button>
     </nav>
     <section id="content"></section>
   </aside>
 </div>
 
 <div id="toast"></div>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

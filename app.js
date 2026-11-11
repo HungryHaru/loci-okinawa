@@ -1393,10 +1393,12 @@ function renderPanel() {
 function buildHTML() {
   const ed = editingId && findLocus(editingId);
   return `
-    <p class="hint">地図をクリックするか、ストリートビューの矢印で歩いて場所を探そう。
-    <b>向き・ズームもそのまま保存</b>されるので、覚えたいものを置く「目印」（シーサー、看板、ガジュマルなど）を画面の中心にしてから置くのがおすすめです。<br>
-    右上の ✏️ で景色に落書き、📝 で付箋を貼れます（✋ で視点操作に戻る）。復習では「答えを見る」まで隠れます。</p>
-    ${ed ? `<span class="badge">#${numOf(ed)} を編集中</span>` : ''}
+    <div class="sec-head"><h2 class="ttl">${ed ? `#${numOf(ed)} を直す` : 'この場所に置く'}</h2><span class="chip">${esc(cur().name)}・${cur().loci.length} か所</span></div>
+    <details class="tips"><summary>置き方のこつ</summary>
+      <p class="hint">地図をクリックするか、ストリートビューの矢印で歩いて場所を探そう。
+      <b>向き・ズームもそのまま保存</b>されるので、覚えたいものを置く「目印」（シーサー、看板、ガジュマルなど）を画面の中心にしてから置くのがおすすめです。<br>
+      右上の ✏️ で景色に落書き、📝 で付箋を貼れます（✋ で視点操作に戻る）。復習では「答えを見る」まで隠れます。</p>
+    </details>
     <label>目印の名前（なくてもよい）
       <input id="nameInput" type="text" placeholder="例：赤いポスト、知念商店、公園のベンチ" value="${esc(ed ? ed.name || '' : draftText.name)}">
     </label>
@@ -1416,17 +1418,19 @@ function buildHTML() {
            <button class="ghost" data-action="cancel-edit">やめる</button>`
         : `<button class="primary" data-action="add">この場所に置く</button>`}
     </div>
+    <div class="art-box">
+    <h3 class="sec">イメージを絵にする</h3>
     <div class="row-btns">
       <button data-action="claude-art" title="連想イメージから Claude 用の指示文をコピーして Claude を開く">🎨 Claudeで絵を作る</button>
       <button data-action="paste-art" title="コピーした SVG コードや画像を貼る">📋 コピーした絵を貼る</button>
     </div>
-    <p class="hint" style="margin-top:6px">
+    <details class="tips"><summary>絵の作り方</summary><p class="hint">
       ① 「Claudeで絵を作る」→ 指示文がコピーされて Chrome で Claude が開く<br>
       ② Claude に貼り付けて送信 → 横に絵が出るので確認（直したい所は言葉で頼む）→ 決まったら、返事の最後のコードの右上にある「コピー」<br>
       ③ ここに戻って「コピーした絵を貼る」→ 景色の貼りたい所をクリック（ドラッグで大きさ）<br>
       ほかの画像生成AIを使うときは <button class="linklike" data-action="ai-prompt">こちらの指示文</button> を使い、できた画像を Ctrl+V かドラッグで貼れます。
-    </p>
-    <p class="count">「${esc(cur().name)}」の場所：${cur().loci.length} 個</p>`;
+    </p></details>
+    </div>`;
 }
 
 // ===== 成果の記録 =====
@@ -1499,6 +1503,7 @@ function statsHTML() {
   const days = Object.values(state.history || {}).filter((h) => h[0] + h[1]).length;
   const total = Object.values(state.history || {}).reduce((n, h) => n + h[0] + h[1], 0);
   return `
+    <div class="sec-head"><h2 class="ttl">記録</h2><span class="chip">${state.palaces.length} の宮殿・${all.length} か所</span></div>
     <div class="tiles">
       <div class="tile"><div class="tile-num">${nx.day ? `${mdOf(nx.day)}<small> ${nx.n} か所</small>` : '–'}</div><div class="tile-lbl">次の復習日</div></div>
       <div class="tile"><div class="tile-num">${learned}<small> / ${all.length}</small></div><div class="tile-lbl">覚えた場所</div></div>
@@ -1548,8 +1553,13 @@ function reviewHTML() {
 
   if (!review) {
     return `
+      <div class="sec-head"><h2 class="ttl">復習</h2><span class="chip">${esc(cur().name)}</span></div>
+      <div class="rv-stats">
+        <div class="today"><b>${due}</b>今日の復習</div>
+        <div><b>${loci.length}</b>場所</div>
+        <div><b>${weak}</b>苦手・未復習</div>
+      </div>
       <p class="hint">場所を順番に巡ります。<b>答えを見る前に</b>、景色の中に置いたイメージをできるだけ鮮明に思い浮かべよう。</p>
-      <p>場所：${loci.length} 個 ／ <b>今日の復習：${due} 個</b> ／ 苦手・未復習：${weak} 個</p>
       ${!due && !dueAll ? `<p class="hint">🎉 今日の復習はありません。${nx.day ? `次は <b>${mdOf(nx.day)}</b>（${nx.n} か所）です。` : ''}</p>` : ''}
       ${near ? `<p class="hint">近いうち（2日以内）に予定の ${near} 個も、${due ? '一緒に' : '前倒しで'}復習できます。復習する日をまとめて、毎日にならないようにするためです。</p>` : ''}
       ${dueAll > due ? `<p class="hint">ほかの宮殿にも今日の復習が ${dueAll - due} 個あります。</p>` : ''}
@@ -1559,16 +1569,20 @@ function reviewHTML() {
         <button data-action="review-weak">苦手・未復習だけ</button>
       </div>
       ${hintToggleHTML()}
-      <p class="hint">「覚えてた」が続くほど、次の復習までの間が 1日 → 3日 → 1週間 → 2週間 → 1か月 → 2か月 → 4か月 とのびます（エビングハウスの忘却曲線）。忘れたら翌日からやり直しです。LINE の通知は、この復習日が来た日だけ届きます。</p>
-      <p class="hint" style="margin-top:16px">キーボード：Enter＝答えを見る、1＝覚えてた、2＝忘れた</p>`;
+      <details class="tips"><summary>復習の間隔のしくみ</summary><p class="hint">「覚えてた」が続くほど、次の復習までの間が 1日 → 3日 → 1週間 → 2週間 → 1か月 → 2か月 → 4か月 とのびます（エビングハウスの忘却曲線）。忘れたら翌日からやり直しです。LINE の通知は、この復習日が来た日だけ届きます。</p>
+      <p class="hint">キーボード：Enter＝答えを見る、1＝覚えてた、2＝忘れた</p></details>`;
   }
 
   if (review.idx >= review.queue.length) {
     const total = review.ok + review.ng;
     return `
-      <p class="progress">おつかれさま！${(() => { const nx = nextReview(); return nx.day ? `　次の復習は ${mdOf(nx.day)}` : ''; })()}</p>
-      <div class="score">${review.ok} / ${total}</div>
-      <p class="hint">${review.ng ? '忘れた場所は「苦手」に入ります。連想イメージをもっと大げさにすると覚えやすくなります。' : '全部覚えていました 🎉'}</p>
+      <div class="done-card">
+        <p class="done-word">${!review.ng ? '上等！' : review.ok >= review.ng ? 'ちばりよー！' : 'なんくるないさ'}</p>
+        <p class="done-sub">${!review.ng ? 'じょーとー（すばらしい）' : review.ok >= review.ng ? 'がんばれ、もうひと息' : 'なんとかなるさ。また明日'}</p>
+        <div class="score">${review.ok}<small> / ${total}</small></div>
+        <p class="progress">おつかれさま！${(() => { const nx = nextReview(); return nx.day ? `次の復習は ${mdOf(nx.day)}` : ''; })()}</p>
+      </div>
+      <p class="hint">${review.ng ? '忘れた場所は「苦手」に入ります。連想イメージをもっと大げさにすると覚えやすくなります。' : '全部覚えていました。'}</p>
       <div class="row-btns">
         <button class="primary" data-action="review-weak">苦手だけもう一度</button>
         <button data-action="review-end">終わる</button>
@@ -1578,11 +1592,15 @@ function reviewHTML() {
   const l = findLocus(review.queue[review.idx]);
   const hint = showHint() ? hintOf(l) : '';
   return `
-    <p class="progress">${review.idx + 1} / ${review.queue.length}　（場所 #${numOf(l)}${l.name ? ` ${esc(l.name)}` : ''}）</p>
-    <p class="question">この場所に何を置いた？</p>
-    ${hint ? `<p class="hint-ja">🇯🇵 「${esc(hint)}」<small>を英語で言うと？（声に出してから答えを見よう）</small></p>` : ''}
+    <div class="rv-head"><span class="rv-count">${review.idx + 1}<small> / ${review.queue.length}</small></span><span class="rv-place">場所 #${numOf(l)}${l.name ? `・${esc(l.name)}` : ''}</span></div>
+    <div class="rv-bar"><span style="width:${Math.round(review.idx / review.queue.length * 100)}%"></span></div>
+    <div class="q-card">
+      <p class="question">この場所に何を置いた？</p>
+      ${hint ? `<p class="hint-ja"><span class="ja-tag">日本語</span>「${esc(hint)}」<small>を英語で言うと？（声に出してから答えを見よう）</small></p>` : ''}
+    </div>
     ${review.revealed
       ? `<div class="answer">
+           <span class="stamp" aria-hidden="true">答</span>
            <div class="item">${esc(l.item)}</div>
            ${l.image ? `<div class="image">💭 ${esc(l.image)}</div>` : ''}
          </div>
@@ -1598,11 +1616,14 @@ function reviewHTML() {
 function listHTML() {
   const loci = cur().loci;
   if (!loci.length) return `<p class="hint">まだ場所がありません。「作成」タブから置いてみよう。</p>`;
-  return `<ol class="loci">${loci.map((l, i) => `
-    <li>
+  const lvName = Object.fromEntries(LEVELS.map((v) => [v.key, v.label]));
+  return `<div class="sec-head"><h2 class="ttl">一覧</h2><span class="chip">${esc(cur().name)}・${loci.length} か所</span></div>
+  <ol class="loci">${loci.map((l, i) => `
+    <li class="lv-${levelOf(l)}">
       <div class="row">
         <span class="num">${i + 1}</span>
         <div class="txt">
+          <span class="lv-chip">${lvName[levelOf(l)]}</span>
           ${l.name ? `<small class="landmark">📍 ${esc(l.name)}</small>` : ''}
           <b>${esc(l.item)}</b>
           ${l.image ? `<small>💭 ${esc(l.image)}</small>` : ''}
