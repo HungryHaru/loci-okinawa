@@ -8,7 +8,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
 - 範囲は**沖縄限定**（`BOUNDS`）。利用者は本人だけ。
 - **ストリートビュー画像は保存しない**（Google 規約）。保存するのは panoId・位置・向き・ズームのみ。
 - Obsidian 連携は**アプリ → Vault の一方通行**。
-- AI 画像はアプリから生成しない（無料の外部 AI で作って貼る）。プロンプトのコピー機能のみ。
+- AI 画像は追加料金なしで作る（2026-11-11 ユーザーの希望で変更）：PC では server.py の `POST /draw` が Claude Code（`claude.exe -p`、ユーザーの Claude プランの範囲）に SVG を描かせ、アプリがそのまま貼る。スマホ・ネット版は今までどおり指示文をコピーして claude.ai を開く。有料の画像 API は使わない。
 
 ## 構成（ビルドなし・素の HTML/CSS/JS）
 - `index.html` / `style.css` / `app.js` … アプリ本体（app.js 1ファイル）
@@ -16,7 +16,8 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
   - 見た目は「琉球デザイン」（2026-11-11）：琉球藍の地＋紅型（びんがた）風の花模様のヘッダー、ミンサー織（五つと四つ）の帯、朱印風の番号、藍染めの濃淡の復習カレンダー。文字は Google Fonts の Zen Antique Soft（見出し・数字）と Zen Maru Gothic（本文）。模様は style.css に SVG の data URI で直接入っている（`__BINGATA__` などの置き換えで作った。描き直すときは同じ色を使う）
   - 復習の終わりの言葉：全問正解「上等！」、半分以上「ちばりよー！」、それ未満「なんくるないさ」
 - `help.html` … 使い方ページ（機能を変えたらここも更新する）
-- `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く。Origin チェックあり）。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
+- `docs/basic-design.md`（基本設計：目的・方針・構成・機能／画面一覧）・`docs/detailed-design.md`（詳細設計：データ定義・処理・同期・Apps Script・エラー）… 2026-11-11 作成。**機能・データ・処理を変えたら、この 2 つも直す**
+- `server.py` … ローカルサーバー（静的配信＋`POST /open-chrome` で許可した URL（claude.ai のみ）を Chrome で開く＋`POST /draw` で Claude Code に絵を描かせる。Origin チェックあり）。server.py を変えたら、動いているサーバー（ポート 8000）を止めて起動し直す。`python -m http.server` で起動した場合は app.js 側が `window.open` にフォールバック
 - `start-app.ps1` … デスクトップショートカット用ランチャー（server.py を 127.0.0.1:8000 で起動 → Chrome `--app` で開く。ブラウザは Chrome に統一）。PS 5.1 が読むので **ASCII のみ**で書くこと
 - `gas/line-notify.gs` … クラウド連携用の Google Apps Script（ユーザーが script.google.com に貼って使う）。トークン類はスクリプト プロパティ
   - 毎日12時の `dailyNotify`：① `dailyBackup_()`（Drive の backups/ に state-YYYY-MM-DD.json を7日分。今の state にもバックアップにも使われていない画像をゴミ箱へ）② `notifyFromState_()`（state.json から今日の復習を計算し、問題＝Street View リンク、答え＝下の方、最大15か所）。同期データがなければ旧方式 `notifyFromSchedule_()`（アプリが送った日付ごとの数）

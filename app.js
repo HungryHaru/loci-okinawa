@@ -1420,12 +1420,18 @@ function buildHTML() {
     </div>
     <div class="art-box">
     <h3 class="sec">イメージを絵にする</h3>
+    <label>絵への注文（なくてもよい）
+      <textarea id="artNoteInput" rows="2" placeholder="例：シーサーをもっと怒った顔に。りんごは 3 個。夕焼けの色で">${esc(artNote)}</textarea>
+    </label>
+    ${lastArt ? `<label class="check"><input type="checkbox" id="artFixToggle" ${artFix ? 'checked' : ''}> さっきの絵を、この注文で直す（オフ＝新しく描く）</label>` : ''}
     <div class="row-btns">
       <button data-action="claude-art" title="連想イメージから Claude 用の指示文をコピーして Claude を開く">🎨 Claudeで絵を作る</button>
       <button data-action="paste-art" title="コピーした SVG コードや画像を貼る">📋 コピーした絵を貼る</button>
     </div>
     <details class="tips"><summary>絵の作り方</summary><p class="hint">
-      ① 「Claudeで絵を作る」→ 指示文がコピーされて Chrome で Claude が開く<br>
+      <b>PC（デスクトップのアイコンから開いたとき）</b>：「Claudeで絵を作る」を押して待つと、アプリの中で Claude が描きます（30 秒〜2 分）。できたら景色の貼りたい所をクリック（ドラッグで大きさ）。気に入らなければもう一度押す<br>
+      <b>スマホ・ネット版</b>：<br>
+      ① 「Claudeで絵を作る」→ 指示文がコピーされて Claude が開く<br>
       ② Claude に貼り付けて送信 → 横に絵が出るので確認（直したい所は言葉で頼む）→ 決まったら、返事の最後のコードの右上にある「コピー」<br>
       ③ ここに戻って「コピーした絵を貼る」→ 景色の貼りたい所をクリック（ドラッグで大きさ）<br>
       ほかの画像生成AIを使うときは <button class="linklike" data-action="ai-prompt">こちらの指示文</button> を使い、できた画像を Ctrl+V かドラッグで貼れます。
@@ -1718,10 +1724,52 @@ async function copyAiPrompt() {
   if (await copyText(text)) toast('コピーしました。画像生成AIに貼り付けてください');
 }
 
+// PC（server.py）では、Claude Code にアプリの中で描いてもらう（Claude のプランの範囲・追加料金なし）
+// 描けなかったときや、スマホ・GitHub Pages では、claude.ai を開く今までの方法に切り替える
+let drawing_ = false;
+let artNote = '';   // 絵への注文（入力中の文字）
+let lastArt = '';   // さっき描いた絵の SVG（「さっきの絵を直す」用。この画面を開いている間だけ）
+let artFix = false; // さっきの絵を直すか
+async function drawInApp(scene) {
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) return false;
+  if (drawing_) { toast('いま描いています。少し待ってください'); return true; }
+  drawing_ = true;
+  const btn = document.querySelector('[data-action="claude-art"]');
+  if (btn) { btn.disabled = true; btn.textContent = '🎨 Claude が描いています…'; }
+  toast('Claude が絵を描いています（30 秒〜2 分ほど）');
+  try {
+    const res = await fetch('/draw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scene, label: $('#itemInput')?.value.trim() || '', note: artNote.trim(),
+        ...(artFix && lastArt ? { base: lastArt } : {}),
+      }),
+    });
+    if (res.status === 404) return false; // server.py 以外で起動している
+    const d = await res.json();
+    if (d.error) { toast(d.error); return true; }
+    const blob = svgToBlob(d.svg);
+    if (!blob) { toast('絵がうまく受け取れませんでした。もう一度押してください'); return true; }
+    const first = !lastArt;
+    lastArt = d.svg;
+    if (first) renderPanel(); // 「さっきの絵を直す」を出す
+    startPlacing(blob);
+    return true;
+  } catch (e) {
+    return false;
+  } finally {
+    drawing_ = false;
+    const b = document.querySelector('[data-action="claude-art"]');
+    if (b) { b.disabled = false; b.textContent = '🎨 Claudeで絵を作る'; }
+  }
+}
+
 // Claude 向け：SVG コードで描いてもらう
 async function claudeArt() {
   const scene = currentScene();
   if (!scene) return toast('先に「連想イメージ」を書いてください');
+  if (await drawInApp(scene)) return;
   const text = [
     '次の場面を、記憶に残るステッカー風のイラストにしてください。',
     '絵を見て確認・手直ししたいので、SVG のアーティファクトとして表示してください。',
@@ -1729,6 +1777,7 @@ async function claudeArt() {
     'このあと手直しを頼むことがあります。そのときも同じアーティファクトを更新し、最後に新しいコード全体をコードブロックで書いてください。',
     '',
     `場面：${scene}`,
+    ...(artNote.trim() ? [`注文：${artNote.trim()}`] : []),
     '',
     '条件：',
     '- viewBox="0 0 512 512"',
@@ -2021,6 +2070,8 @@ $('#content').addEventListener('change', (e) => {
 
 // 入力中の文字も書きかけとして保存（アプリを閉じても残る）
 $('#content').addEventListener('input', (e) => {
+  if (e.target.id === 'artNoteInput') { artNote = e.target.value; return; }
+  if (e.target.id === 'artFixToggle') { artFix = e.target.checked; return; }
   if (editingId) return;
   if (e.target.id === 'itemInput') draftText.item = e.target.value;
   else if (e.target.id === 'imageInput') draftText.image = e.target.value;
