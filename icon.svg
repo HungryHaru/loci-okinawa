@@ -1,9 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#e4572e"/>
-  <!-- 赤瓦の屋根 -->
-  <path d="M96 236 L256 132 L416 236 Z" fill="#fff"/>
-  <rect x="140" y="236" width="232" height="150" rx="10" fill="#fff" opacity=".92"/>
-  <!-- 位置ピン -->
-  <path d="M256 232c-30 0-54 24-54 54 0 40 54 92 54 92s54-52 54-92c0-30-24-54-54-54z" fill="#1b998b"/>
-  <circle cx="256" cy="286" r="20" fill="#fff"/>
+  <!-- 琉球藍の地 -->
+  <rect width="512" height="512" rx="112" fill="#1f3b6e"/>
+  <!-- 首里城 正殿：二重の赤瓦屋根と龍頭棟飾 -->
+  <path d="M172 160L180 134L194 158Z M340 160L332 134L318 158Z" fill="#e4572e"/>
+  <path d="M140 200Q166 192 180 156L332 156Q346 192 372 200Z" fill="#e4572e"/>
+  <rect x="190" y="200" width="132" height="30" fill="#b4441f"/>
+  <path d="M100 274Q130 262 146 230L366 230Q382 262 412 274Z" fill="#e4572e"/>
+  <!-- 唐破風 -->
+  <path d="M206 274Q206 238 256 232Q306 238 306 274Z" fill="#fff3a3"/>
+  <rect x="146" y="274" width="220" height="62" fill="#b4441f"/>
+  <g fill="#f7f5f0">
+    <rect x="160" y="290" width="26" height="46"/><rect x="200" y="290" width="26" height="46"/><rect x="240" y="290" width="32" height="46"/><rect x="286" y="290" width="26" height="46"/><rect x="326" y="290" width="26" height="46"/>
+  </g>
+  <!-- 石垣 -->
+  <path d="M118 336L394 336L410 364L102 364Z" fill="#f7f5f0"/>
 </svg>

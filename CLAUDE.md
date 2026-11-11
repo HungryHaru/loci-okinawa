@@ -21,6 +21,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
   - 同期：`doPost` の `action`（meta / pull / images / putImages / push / backups / restore）。push では画像を消さない（片付けは毎日のバックアップ時）。Drive の「沖縄 記憶の宮殿（同期データ）」に state.json と images/<id>。版番号 `SYNC_REV` で古い版からの上書きを断る（衝突はアプリ側で本人に選ばせる）
   - コードを変えたらユーザーに「デプロイを管理 → 新バージョン」をしてもらう（URL を変えないため）
 - `icon.svg`（PWA/ファビコン）, `icon-180.png`（iPhone のホーム画面）, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
+  - アイコンは琉球藍 #1f3b6e の地に朱の首里城 正殿（2026-11-11）。PNG と ico は icon.svg から書き出したもの。描き直すときは全サイズをそろえる
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
 
 ## git
