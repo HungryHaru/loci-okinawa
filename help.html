@@ -5,20 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>使い方 - 沖縄 記憶の宮殿</title>
 <link rel="icon" href="icon.svg?v=2" type="image/svg+xml">
+<script>try { const t = localStorage.getItem('loci-okinawa-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
   :root {
     --accent: #e4572e; --accent2: #1b998b; --bg: #f7f5f0; --card: #fff;
     --text: #222; --muted: #6b6b6b; --line: #e5e1d8; --note: #fff8e1; --warn: #fdecea;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #1b1a18; --card: #262522; --text: #ece9e3; --muted: #a8a49c; --line: #3a3833; --note: #3a3322; --warn: #3d2723; }
+    :root:not([data-theme="light"]) { --bg: #0e1422; --card: #141c2e; --text: #e6e9f0; --muted: #9ba5b9; --line: #283350; --note: #2e2a1c; --warn: #3a2219; --accent2: #35bea9; }
   }
+  :root[data-theme="dark"] { --bg: #0e1422; --card: #141c2e; --text: #e6e9f0; --muted: #9ba5b9; --line: #283350; --note: #2e2a1c; --warn: #3a2219; --accent2: #35bea9; }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text); line-height: 1.8;
     font-family: system-ui, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
   }
-  header { background: var(--accent); color: #fff; padding: 28px 16px 24px; }
+  header { background: linear-gradient(135deg, #1f3b6e, #162b52); color: #fff; padding: 28px 16px 24px; border-bottom: 4px solid var(--accent); }
   header .wrap { display: flex; align-items: center; gap: 16px; }
   header img { width: 56px; height: 56px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
   header h1 { margin: 0; font-size: 24px; }
@@ -138,7 +140,7 @@ python -m http.server 8000</pre>
       <tr><td><kbd>＋</kbd></td><td>新しい宮殿を作る</td></tr>
       <tr><td><kbd>🔗</kbd></td><td>Obsidian 連携（緑＝連携中、黄＝止まっている、灰＝未連携）</td></tr>
       <tr><td><kbd>？</kbd></td><td>このページ</td></tr>
-      <tr><td><kbd>⋯</kbd></td><td>名前の変更・宮殿の削除・バックアップ・保存状況・APIキーの変更</td></tr>
+      <tr><td><kbd>⋯</kbd></td><td>画面の色（押すたびに 自動→ライト→ダーク。自動はスマホ・PC の設定に合わせる）・名前の変更・宮殿の削除・バックアップ・保存状況・APIキーの変更</td></tr>
       <tr><td>作成タブ</td><td>場所を置く・編集する</td></tr>
       <tr><td>復習タブ</td><td>ルートを順に巡って思い出す</td></tr>
       <tr><td>一覧タブ</td><td>見る・編集・並べ替え（↑↓）・削除</td></tr>

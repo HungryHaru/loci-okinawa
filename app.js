@@ -1439,10 +1439,10 @@ function recordHistory(ok) {
 }
 // 覚え具合：未復習／覚え中（連続正解 0〜2）／定着（3〜4：1〜2週間後に正解）／長期記憶（5以上：1か月以上）
 const LEVELS = [
-  { key: 'new', label: '未復習', color: '#e5e1d8' },
-  { key: 'learn', label: '覚え中', color: '#a8ddd5' },
-  { key: 'solid', label: '定着', color: '#3fae9f' },
-  { key: 'long', label: '長期記憶', color: '#17665d' },
+  { key: 'new', label: '未復習', color: 'var(--lv-new)' },
+  { key: 'learn', label: '覚え中', color: 'var(--lv-learn)' },
+  { key: 'solid', label: '定着', color: 'var(--lv-solid)' },
+  { key: 'long', label: '長期記憶', color: 'var(--lv-long)' },
 ];
 function levelOf(l) {
   const s = l.stats || {};
@@ -1465,7 +1465,7 @@ function levelBarHTML(loci) {
 }
 
 // 12 週間のカレンダー（色が濃いほど たくさん復習した日）
-const HEAT = ['#eeece6', '#c9ebe5', '#8fd0c6', '#3fae9f', '#17665d'];
+const HEAT = ['var(--heat-0)', 'var(--heat-1)', 'var(--heat-2)', 'var(--heat-3)', 'var(--heat-4)'];
 const heatStep = (n) => (n === 0 ? 0 : n <= 3 ? 1 : n <= 9 ? 2 : n <= 19 ? 3 : 4);
 function heatmapHTML() {
   const today = dayStr();
@@ -1879,8 +1879,33 @@ function importData(file) {
   r.readAsText(file);
 }
 
+// 画面の色：自動（端末の設定に合わせる）→ ライト → ダーク の順に切り替え
+const THEME_KEY = 'loci-okinawa-theme';
+const THEME_LABEL = { auto: '自動', light: 'ライト', dark: 'ダーク' };
+function getTheme() {
+  try { const t = localStorage.getItem(THEME_KEY); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; }
+}
+function applyTheme(t) {
+  if (t === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  try { if (t === 'auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); } catch (e) {}
+  const btn = $('#themeMenuBtn');
+  if (btn) btn.textContent = `画面の色：${THEME_LABEL[t]}`;
+  const dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#12223f' : '#1f3b6e');
+}
+applyTheme(getTheme());
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => applyTheme(getTheme()));
+
 function handleMenu(cmd) {
   $('#menu').classList.add('hidden');
+  if (cmd === 'theme') {
+    const order = ['auto', 'light', 'dark'];
+    const next = order[(order.indexOf(getTheme()) + 1) % order.length];
+    applyTheme(next);
+    toast(`画面の色：${THEME_LABEL[next]}`);
+    return;
+  }
   if (cmd === 'rename') {
     const name = prompt('新しい名前', cur().name);
     if (name && name.trim()) { cur().name = name.trim(); save(); renderAll(); }

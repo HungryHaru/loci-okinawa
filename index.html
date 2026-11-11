@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>沖縄 記憶の宮殿</title>
-<meta name="theme-color" content="#e4572e">
+<meta name="theme-color" content="#1f3b6e">
+<script>
+  // 画面の色（自動／ライト／ダーク）。描画前に当てて、ちらつきを防ぐ
+  try { const t = localStorage.getItem('loci-okinawa-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="記憶の宮殿">
 <link rel="manifest" href="manifest.json?v=3">
@@ -67,6 +71,8 @@
       <a id="helpBtn" class="btn" href="help.html" target="_blank" title="使い方">？</a>
       <button id="menuBtn" title="メニュー">⋯</button>
       <div id="menu" class="hidden">
+        <button data-menu="theme" id="themeMenuBtn">画面の色：自動</button>
+        <div class="menu-sep"></div>
         <button data-menu="rename">宮殿の名前を変更</button>
         <button data-menu="delete">この宮殿を削除</button>
         <button data-menu="export">バックアップを保存（JSON）</button>
