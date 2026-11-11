@@ -23,7 +23,7 @@ Google ストリートビューで沖縄を歩き、場所法（記憶の宮殿�
   - コードを変えたらユーザーに「デプロイを管理 → 新バージョン」をしてもらう（URL を変えないため）
 - iPhone のホーム画面アプリは**消すとデータも消える**。アイコンの入れ直しを案内するときは、先にクラウド同期が済んでいるか確認してもらう
 - `icon.svg`（PWA/ファビコン）, `apple-touch-icon.png`（iPhone のホーム画面。角を丸めない・透明なしの正方形。icon-180.png に藍の地を敷いたもの）, `icon-180.png`, `icon-192.png` / `icon-512.png`（Android）, `icon.ico`（ショートカット用）, `manifest.json`
-  - アイコンは琉球藍 #1f3b6e の地に朱の首里城 正殿（2026-11-11）。PNG と ico は icon.svg から書き出したもの。描き直すときは全サイズをそろえ、index.html・help.html・manifest.json のアイコン URL の `?v=2` を 1 つ上げる（キャッシュ対策）。デスクトップのショートカットは OneDrive\画像\loci-okinawa-icon.ico を参照しているので、そちらにもコピーする
+  - アイコンは琉球藍 #1f3b6e の地に朱の首里城 正殿（2026-11-11）。PNG と ico は icon.svg から書き出したもの。描き直すときは全サイズをそろえ、index.html・help.html・manifest.json のアイコン URL の `?v=2` を 1 つ上げる（キャッシュ対策）。style.css・app.js を変えたら index.html の `?v=3` も上げる（GitHub Pages は10分キャッシュ。server.py は no-cache を返す）。デスクトップのショートカットは OneDrive\画像\loci-okinawa-icon.ico を参照しているので、そちらにもコピーする
 - デスクトップに `沖縄 記憶の宮殿.lnk`（OneDrive\デスクトップ）
 
 ## git
